@@ -37,20 +37,42 @@ class YFinanceFetcher:
 
         if self.use_cache:
             cached = self.cache.get(cache_key)
-            if cached:
+            if cached and cached.get('current_price', 0) > 0:
                 return cached
 
         try:
             stock = yf.Ticker(ticker)
             info = stock.info
 
+            # Try to get price from info first
+            current_price = info.get('currentPrice') or info.get('regularMarketPrice') or 0
+            previous_close = info.get('previousClose') or info.get('regularMarketPreviousClose') or 0
+
+            # If price is 0, try getting from history
+            if current_price == 0:
+                try:
+                    hist = stock.history(period="5d")
+                    if not hist.empty:
+                        current_price = float(hist['Close'].iloc[-1])
+                        if len(hist) > 1:
+                            previous_close = float(hist['Close'].iloc[-2])
+                except:
+                    pass
+
+            # Get market cap, calculate if needed
+            market_cap = info.get('marketCap', 0)
+            shares_outstanding = info.get('sharesOutstanding', 0)
+
+            if market_cap == 0 and shares_outstanding > 0 and current_price > 0:
+                market_cap = shares_outstanding * current_price
+
             result = {
                 'ticker': ticker,
-                'name': info.get('longName', info.get('shortName', ticker)),
-                'current_price': info.get('currentPrice', info.get('regularMarketPrice', 0)),
-                'previous_close': info.get('previousClose', 0),
-                'market_cap': info.get('marketCap', 0),
-                'shares_outstanding': info.get('sharesOutstanding', 0),
+                'name': info.get('longName') or info.get('shortName') or ticker,
+                'current_price': current_price,
+                'previous_close': previous_close,
+                'market_cap': market_cap,
+                'shares_outstanding': shares_outstanding,
                 'float_shares': info.get('floatShares', 0),
                 'fifty_two_week_high': info.get('fiftyTwoWeekHigh', 0),
                 'fifty_two_week_low': info.get('fiftyTwoWeekLow', 0),
@@ -71,7 +93,7 @@ class YFinanceFetcher:
             else:
                 result['daily_change_pct'] = 0
 
-            if self.use_cache:
+            if self.use_cache and result['current_price'] > 0:
                 self.cache.set(cache_key, result)
 
             logger.info(f"Fetched info for {ticker}: ${result['current_price']:.2f}")
@@ -79,7 +101,7 @@ class YFinanceFetcher:
 
         except Exception as e:
             logger.error(f"Error fetching info for {ticker}: {e}")
-            return {'ticker': ticker, 'error': str(e)}
+            return {'ticker': ticker, 'error': str(e), 'current_price': 0, 'market_cap': 0}
 
     def get_price_history(self, ticker: str, period: str = "1y") -> pd.DataFrame:
         """
