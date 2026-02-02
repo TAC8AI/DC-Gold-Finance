@@ -1,0 +1,74 @@
+# Junior Gold Miner Company Configurations
+# Each company has project details for DCF/NPV modeling
+
+companies:
+  DC:
+    name: "Dakota Gold Corp"
+    ticker: "DC"
+    exchange: "NYSE American"
+    description: "Pre-production gold developer in South Dakota's historic Homestake District"
+    projects:
+      richmond_hill:
+        name: "Richmond Hill"
+        type: "heap_leach"
+        annual_production_oz: 153000
+        aisc_per_oz: 1050
+        mine_life_years: 17
+        initial_capex_millions: 384
+        production_start_year: 2029
+        stage: "permitting"  # exploration, permitting, construction, production
+        jurisdiction: "USA - South Dakota"
+        grade_g_per_t: 0.8
+        recovery_rate: 0.75
+    control_factor: 0.25  # Adjustment for benchmark comparison
+    notes: "Former Barrick/Newmont management team. Near Homestake Mine (40M+ oz historic)"
+
+  PPTA:
+    name: "Perpetua Resources"
+    ticker: "PPTA"
+    exchange: "NASDAQ"
+    description: "Idaho-based antimony and gold project with strategic US critical minerals angle"
+    projects:
+      stibnite:
+        name: "Stibnite Gold Project"
+        type: "open_pit_underground"
+        annual_production_oz: 450000  # Peak production estimate
+        aisc_per_oz: 900
+        mine_life_years: 15
+        initial_capex_millions: 1800
+        production_start_year: 2028
+        stage: "permitting"
+        jurisdiction: "USA - Idaho"
+        grade_g_per_t: 4.0
+        recovery_rate: 0.90
+        antimony_credits: true  # Significant byproduct value
+    control_factor: 0.20  # Slightly better due to government support
+    notes: "US government antimony priority. DOE loan program potential. Higher grade asset."
+
+  HYMC:
+    name: "Hycroft Mining"
+    ticker: "HYMC"
+    exchange: "NASDAQ"
+    description: "Nevada heap leach operation with large resource but challenged economics"
+    projects:
+      hycroft_mine:
+        name: "Hycroft Mine"
+        type: "heap_leach"
+        annual_production_oz: 80000  # Current/near-term target
+        aisc_per_oz: 1600
+        mine_life_years: 20
+        initial_capex_millions: 200
+        production_start_year: 2025
+        stage: "production"  # Currently operating at small scale
+        jurisdiction: "USA - Nevada"
+        grade_g_per_t: 0.3
+        recovery_rate: 0.60
+        silver_credits: true  # Significant silver byproduct
+    control_factor: 0.30  # Higher risk, lower quality asset
+    notes: "Large resource but marginal economics. AMC/Sprott investment. Needs higher gold prices."
+
+# Display order for dashboards
+display_order:
+  - DC
+  - PPTA
+  - HYMC

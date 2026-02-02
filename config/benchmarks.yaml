@@ -1,0 +1,92 @@
+# Self-Storage and Alternative Investment Benchmark Configuration
+# Used to calculate control-adjusted returns
+
+self_storage:
+  name: "Self-Storage Development"
+  description: "Ground-up self-storage development as control investment benchmark"
+
+  returns:
+    irr: 0.18  # 18% IRR target
+    cash_on_cash_year1: 0.08
+    stabilized_yield: 0.12
+
+  timeline:
+    development_months: 18
+    lease_up_months: 12
+    total_to_stabilization: 30  # 2.5 years
+    hold_period_years: 5
+
+  risk_profile:
+    volatility: "low"
+    control_level: "high"
+    liquidity: "moderate"
+    leverage_typical: 0.65  # 65% LTV
+
+  advantages:
+    - "Direct operational control"
+    - "Predictable cash flows"
+    - "Lower correlation to markets"
+    - "Tangible asset"
+    - "Recession-resistant demand"
+
+  disadvantages:
+    - "Capital intensive"
+    - "Local market dependent"
+    - "Management burden"
+    - "Limited upside vs mining"
+
+# Control factor adjustments for mining investments
+# Lower factor = project has more favorable characteristics
+control_factors:
+  base: 0.25  # Default for pre-production miners
+
+  adjustments:
+    permitted: -0.05      # Reduce risk if permitted
+    financed: -0.05       # Reduce if fully financed
+    producing: -0.10      # Significantly lower for producers
+    early_stage: +0.05    # Increase for exploration
+    high_jurisdiction_risk: +0.10  # Non-tier-1 countries
+    proven_management: -0.03  # Track record bonus
+
+  bounds:
+    minimum: 0.10  # Even best miners have some control discount
+    maximum: 0.50  # Very early stage, high risk projects
+
+# Control-adjusted return calculation
+# Mining Adjusted Return = Mining Expected Return - (Control Factor * Benchmark IRR)
+# Example: 40% expected - (0.25 * 18%) = 40% - 4.5% = 35.5% adjusted return
+
+# Hurdle rates for investment decisions
+hurdle_rates:
+  minimum_adjusted_return: 0.15  # 15% after control adjustment
+  minimum_raw_return: 0.25       # 25% raw expected return
+  maximum_acceptable_risk_score: 2.0  # Don't invest if risk > 2.0
+
+# Alternative benchmarks for comparison
+alternative_benchmarks:
+  sp500:
+    name: "S&P 500 Index"
+    expected_return: 0.10
+    volatility: 0.18
+    control_level: "none"
+
+  gold_etf:
+    name: "Gold ETF (GLD)"
+    expected_return: 0.05
+    volatility: 0.15
+    control_level: "none"
+    correlation_to_gold: 0.99
+
+  senior_miners:
+    name: "Senior Gold Miners (GDX)"
+    expected_return: 0.12
+    volatility: 0.35
+    control_level: "none"
+    leverage_to_gold: 2.0
+
+  junior_miners:
+    name: "Junior Gold Miners (GDXJ)"
+    expected_return: 0.15
+    volatility: 0.45
+    control_level: "none"
+    leverage_to_gold: 3.0

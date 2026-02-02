@@ -1,0 +1,84 @@
+# Market and DCF Assumptions for Junior Gold Miner Analysis
+
+gold_price_scenarios:
+  bear:
+    price: 1800
+    label: "Bear Case"
+    probability: 0.20
+    description: "Recessionary environment, strong USD"
+
+  base:
+    price: 2100
+    label: "Base Case"
+    probability: 0.50
+    description: "Current trading range, moderate inflation"
+
+  bull:
+    price: 2500
+    label: "Bull Case"
+    probability: 0.25
+    description: "Elevated inflation, central bank buying"
+
+  super_bull:
+    price: 3000
+    label: "Super Bull"
+    probability: 0.05
+    description: "Currency crisis, extreme safe haven demand"
+
+# For sensitivity analysis grid
+gold_price_range:
+  min: 1600
+  max: 3200
+  step: 200
+  breakeven_search_min: 1000
+  breakeven_search_max: 2500
+
+discount_rates:
+  conservative:
+    rate: 0.12
+    label: "12% (Conservative)"
+    description: "High risk premium for pre-production assets"
+
+  base:
+    rate: 0.08
+    label: "8% (Base)"
+    description: "Standard mining project discount rate"
+
+  optimistic:
+    rate: 0.05
+    label: "5% (Optimistic)"
+    description: "Low rate for permitted, financed projects"
+
+  very_low:
+    rate: 0.03
+    label: "3% (Very Low)"
+    description: "Near risk-free, for comparison only"
+
+# For sensitivity matrix
+discount_rate_range:
+  - 0.05
+  - 0.08
+  - 0.10
+  - 0.12
+
+# Tax assumptions
+tax:
+  federal_rate: 0.21
+  state_rate_avg: 0.05
+  effective_rate: 0.25  # Combined estimate
+  tax_loss_carryforward: true
+
+# Inflation/escalation
+inflation:
+  general: 0.03
+  mining_costs: 0.04
+  gold_price_growth: 0.02
+
+# Currency
+currency:
+  base: "USD"
+  gold_quote: "USD/oz"
+
+# Timing
+current_year: 2025
+analysis_horizon_years: 25
