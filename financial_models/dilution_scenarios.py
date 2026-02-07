@@ -110,7 +110,7 @@ class DilutionScenarioModeler:
 
             # Calculate ownership impact
             current_ownership = 100
-            post_ownership = (current_shares / post_shares) * 100
+            post_ownership = (current_shares / post_shares) * 100 if post_shares > 0 else 0
 
             # Implied capital raised (assuming at current price)
             capital_raised = new_shares * current_price
