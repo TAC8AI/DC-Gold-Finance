@@ -115,22 +115,23 @@ def main():
             label_visibility="collapsed"
         )
 
-        st.markdown("---")
+        if page != "NPV & Sensitivity":
+            st.markdown("---")
 
-        # Companies tracked
-        st.markdown('<div class="sidebar-section-title">Companies Tracked</div>', unsafe_allow_html=True)
-        for ticker in tickers:
-            company = companies.get(ticker, {})
-            company_name = company.get('name', ticker)
-            st.markdown(
-                f"""
-                <div class="company-chip">
-                    <span class="company-chip-ticker">{ticker}</span>
-                    <span class="company-chip-name">{company_name}</span>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            # Companies tracked
+            st.markdown('<div class="sidebar-section-title">Companies Tracked</div>', unsafe_allow_html=True)
+            for ticker in tickers:
+                company = companies.get(ticker, {})
+                company_name = company.get('name', ticker)
+                st.markdown(
+                    f"""
+                    <div class="company-chip">
+                        <span class="company-chip-ticker">{ticker}</span>
+                        <span class="company-chip-name">{company_name}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
         st.markdown("---")
 

@@ -14,6 +14,44 @@ from data_ingestion.data_normalizer import DataNormalizer
 from data_ingestion.gold_price_fetcher import GoldPriceFetcher
 
 
+def _clamp(value: float, min_value: float, max_value: float) -> float:
+    """Clamp value to slider bounds."""
+    return max(min_value, min(value, max_value))
+
+
+def _company_default_inputs(project: Dict[str, Any], current_gold: float) -> Dict[str, float]:
+    """Default control values for a company."""
+    return {
+        'gold_price': int(_clamp(round(current_gold), 1400, 5000)),
+        'discount_rate_pct': 8.0,
+        'probability_success_pct': 100,
+        'production': int(_clamp(project.get('annual_production_oz', 150000), 25000, 600000)),
+        'aisc': int(_clamp(project.get('aisc_per_oz', 1100), 600, 2200)),
+        'capex': int(_clamp(project.get('initial_capex_millions', 400), 50, 4000)),
+        'start_year': int(_clamp(project.get('production_start_year', 2029), 2025, 2038)),
+        'mine_life': int(_clamp(project.get('mine_life_years', 17), 5, 40))
+    }
+
+
+def _control_key(ticker: str, field: str) -> str:
+    """Per-company control key so each miner keeps its own assumptions."""
+    return f"npv_control_{ticker}_{field}"
+
+
+def _initialize_company_inputs(ticker: str, defaults: Dict[str, float]):
+    """Initialize session state controls for selected company if absent."""
+    for field, value in defaults.items():
+        key = _control_key(ticker, field)
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+
+def _reset_company_inputs(ticker: str, defaults: Dict[str, float]):
+    """Reset selected company controls to defaults."""
+    for field, value in defaults.items():
+        st.session_state[_control_key(ticker, field)] = value
+
+
 def render_npv_sensitivity(tickers: List[str], selected_ticker: str = None):
     """Render NPV and sensitivity analysis page"""
 
@@ -42,60 +80,104 @@ def render_npv_sensitivity(tickers: List[str], selected_ticker: str = None):
     project = company_data.get('project', {})
     market = company_data.get('market', {})
 
-    st.markdown(f"### {company_data.get('name', selected)} - {project.get('name', 'Project')}")
+    company_name = company_data.get('name', selected)
+    project_name = project.get('name', 'Project')
+    st.markdown(f"### {company_name} - {project_name}")
 
-    # Sidebar inputs
-    with st.sidebar:
-        st.markdown("### Valuation Assumptions")
+    defaults = _company_default_inputs(project, current_gold)
+    _initialize_company_inputs(selected, defaults)
 
-        gold_price = st.slider(
+    st.markdown("#### Valuation Control Panel")
+    control_header_col, control_button_col = st.columns([5, 1])
+    with control_header_col:
+        st.caption("Core meeting controls stay visible. Detailed project engineering inputs are in Advanced.")
+    with control_button_col:
+        if st.button(
+            "Reset Base Case",
+            key=f"reset_controls_{selected}",
+            use_container_width=True,
+            type="secondary"
+        ):
+            _reset_company_inputs(selected, defaults)
+            st.rerun()
+
+    row1_col1, row1_col2, row1_col3 = st.columns(3)
+    with row1_col1:
+        gold_price = st.number_input(
             "Gold Price ($/oz)",
-            min_value=1500,
-            max_value=3500,
-            value=int(current_gold),
-            step=50
+            min_value=1400,
+            max_value=5000,
+            step=1,
+            value=int(st.session_state[_control_key(selected, 'gold_price')]),
+            key=_control_key(selected, 'gold_price')
         )
-
-        discount_rate = st.slider(
+    with row1_col2:
+        discount_rate_pct = st.slider(
             "Discount Rate (%)",
-            min_value=3,
-            max_value=15,
-            value=8
-        ) / 100
-
-        st.markdown("---")
-        st.markdown("### Project Parameters")
-
-        production = st.number_input(
-            "Annual Production (oz)",
-            value=project.get('annual_production_oz', 150000),
-            step=10000
+            min_value=3.0,
+            max_value=15.0,
+            step=0.25,
+            value=float(st.session_state[_control_key(selected, 'discount_rate_pct')]),
+            key=_control_key(selected, 'discount_rate_pct')
+        )
+    with row1_col3:
+        probability_success_pct = st.slider(
+            "Probability of Success (%)",
+            min_value=0,
+            max_value=100,
+            step=5,
+            value=int(st.session_state[_control_key(selected, 'probability_success_pct')]),
+            key=_control_key(selected, 'probability_success_pct')
         )
 
-        aisc = st.number_input(
-            "AISC ($/oz)",
-            value=project.get('aisc_per_oz', 1100),
-            step=50
-        )
+    with st.expander("Advanced Project Inputs", expanded=False):
+        adv_col1, adv_col2, adv_col3 = st.columns(3)
+        with adv_col1:
+            production = st.slider(
+                "Annual Production (oz)",
+                min_value=25000,
+                max_value=600000,
+                step=5000,
+                value=int(st.session_state[_control_key(selected, 'production')]),
+                key=_control_key(selected, 'production')
+            )
+            aisc = st.slider(
+                "AISC ($/oz)",
+                min_value=600,
+                max_value=2200,
+                step=25,
+                value=int(st.session_state[_control_key(selected, 'aisc')]),
+                key=_control_key(selected, 'aisc')
+            )
+        with adv_col2:
+            capex = st.slider(
+                "Capex ($M)",
+                min_value=50,
+                max_value=4000,
+                step=25,
+                value=int(st.session_state[_control_key(selected, 'capex')]),
+                key=_control_key(selected, 'capex')
+            )
+            start_year = st.slider(
+                "Production Start",
+                min_value=2025,
+                max_value=2038,
+                step=1,
+                value=int(st.session_state[_control_key(selected, 'start_year')]),
+                key=_control_key(selected, 'start_year')
+            )
+        with adv_col3:
+            mine_life = st.slider(
+                "Mine Life (Years)",
+                min_value=5,
+                max_value=40,
+                step=1,
+                value=int(st.session_state[_control_key(selected, 'mine_life')]),
+                key=_control_key(selected, 'mine_life')
+            )
+            st.caption("Use advanced sliders when pressure-testing engineering assumptions.")
 
-        capex = st.number_input(
-            "Capex ($M)",
-            value=project.get('initial_capex_millions', 400),
-            step=25
-        )
-
-        start_year = st.selectbox(
-            "Production Start",
-            [2025, 2026, 2027, 2028, 2029, 2030, 2031],
-            index=max(0, project.get('production_start_year', 2029) - 2025)
-        )
-
-        mine_life = st.slider(
-            "Mine Life (Years)",
-            min_value=5,
-            max_value=30,
-            value=project.get('mine_life_years', 17)
-        )
+    discount_rate = discount_rate_pct / 100
 
     # Calculate NPV
     metrics = calculator.calculate_project_metrics(
@@ -126,28 +208,43 @@ def render_npv_sensitivity(tickers: List[str], selected_ticker: str = None):
 
     implied_price = npv / shares if shares > 0 else 0
     upside_pct = ((npv - market_cap) / market_cap * 100) if market_cap > 0 else 0
+    probability_factor = probability_success_pct / 100
+    risk_adjusted_npv = npv * probability_factor
+    risk_adjusted_npv_billions = risk_adjusted_npv / 1_000_000_000
+    risk_adjusted_implied_price = risk_adjusted_npv / shares if shares > 0 else 0
+    risk_adjusted_upside_pct = ((risk_adjusted_npv - market_cap) / market_cap * 100) if market_cap > 0 else 0
 
     st.markdown(f"""
     <div style="background: linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%); padding: 40px; border-radius: 20px; border: 4px solid #3b82f6; box-shadow: 0 20px 60px rgba(59, 130, 246, 0.2); text-align: center; margin: 20px 0;">
         <h3 style="color: #475569; margin: 0 0 10px 0; font-size: 1rem; text-transform: uppercase; letter-spacing: 2px;">
-            Project NPV at ${gold_price:,}/oz Gold, {discount_rate*100:.0f}% Discount
+            Project Value at ${gold_price:,}/oz Gold, {discount_rate*100:.2f}% Discount
         </h3>
-        <h1 style="color: #1e40af; margin: 0; font-size: 4rem; font-weight: 800;">
-            ${npv_billions:.2f}B
-        </h1>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 10px;">
+            <div style="background:#eef5ff; border:1px solid #bfdbfe; border-radius:14px; padding:16px;">
+                <p style="color: #64748b; margin: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px;">Base NPV</p>
+                <p style="color: #1e40af; margin: 0; font-size: 2.4rem; font-weight: 800;">${npv_billions:.2f}B</p>
+            </div>
+            <div style="background:#effcf4; border:1px solid #bbf7d0; border-radius:14px; padding:16px;">
+                <p style="color: #065f46; margin: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px;">Risk-Adjusted NPV ({probability_success_pct}% PoS)</p>
+                <p style="color: #047857; margin: 0; font-size: 2.4rem; font-weight: 800;">${risk_adjusted_npv_billions:.2f}B</p>
+            </div>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
             <div>
-                <p style="color: #64748b; margin: 0; font-size: 0.8rem; text-transform: uppercase;">Implied Share Price</p>
-                <p style="color: #0f172a; margin: 0; font-size: 1.8rem; font-weight: 700;">${implied_price:.2f}</p>
+                <p style="color: #64748b; margin: 0; font-size: 0.8rem; text-transform: uppercase;">Risk-Adjusted Implied Share Price</p>
+                <p style="color: #0f172a; margin: 0; font-size: 1.8rem; font-weight: 700;">${risk_adjusted_implied_price:.2f}</p>
             </div>
             <div>
                 <p style="color: #64748b; margin: 0; font-size: 0.8rem; text-transform: uppercase;">Current Price</p>
                 <p style="color: #0f172a; margin: 0; font-size: 1.8rem; font-weight: 700;">${market.get('current_price', 0):.2f}</p>
             </div>
             <div>
-                <p style="color: #64748b; margin: 0; font-size: 0.8rem; text-transform: uppercase;">NPV vs Market</p>
-                <p style="color: {'#22c55e' if upside_pct > 0 else '#dc2626'}; margin: 0; font-size: 1.8rem; font-weight: 700;">{upside_pct:+.0f}%</p>
+                <p style="color: #64748b; margin: 0; font-size: 0.8rem; text-transform: uppercase;">Risk-Adjusted NPV vs Market</p>
+                <p style="color: {'#22c55e' if risk_adjusted_upside_pct > 0 else '#dc2626'}; margin: 0; font-size: 1.8rem; font-weight: 700;">{risk_adjusted_upside_pct:+.0f}%</p>
             </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <p style="color:#64748b; font-size:0.86rem; margin:0;">Base implied price ${implied_price:.2f} | Base NPV vs market {upside_pct:+.0f}%</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
