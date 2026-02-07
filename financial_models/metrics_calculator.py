@@ -41,6 +41,12 @@ class MetricsCalculator:
         dilution_scenarios = self.dilution_modeler.model_scenarios(ticker)
         gold_data = self.gold_fetcher.get_current_price()
 
+        project_capex_millions = company_data.get('project', {}).get('initial_capex_millions', 0) or 0
+        capex_coverage_pct = (
+            cash_analysis.get('current_cash_millions', 0) / project_capex_millions * 100
+            if project_capex_millions > 0 else 0
+        )
+
         # Combine into unified structure
         result = {
             'ticker': ticker,
@@ -116,10 +122,7 @@ class MetricsCalculator:
             # Funding
             'funding': {
                 'funding_gap_millions': company_data.get('calculated', {}).get('funding_gap_millions', 0),
-                'capex_coverage': (
-                    cash_analysis.get('current_cash_millions', 0) /
-                    company_data.get('project', {}).get('initial_capex_millions', 1) * 100
-                )
+                'capex_coverage': capex_coverage_pct
             },
 
             # Gold context

@@ -131,6 +131,9 @@ class NPVCalculator:
         Returns:
             IRR as decimal
         """
+        if initial_capex <= 0 or mine_life_years <= 0:
+            return 0
+
         # Build cash flow series: negative capex followed by positive FCFs
         cash_flows = [-initial_capex] + [annual_fcf] * mine_life_years
 
