@@ -91,8 +91,38 @@ companies:
     control_factor: 0.30  # Higher risk, lower quality asset
     notes: "Large resource but marginal economics. AMC/Sprott investment. Needs higher gold prices."
 
+  NEM:
+    name: "Newmont Corporation"
+    ticker: "NEM"
+    exchange: "NYSE"
+    description: "World's largest gold producer with global operations across five continents"
+    projects:
+      consolidated_portfolio:
+        name: "Consolidated Global Portfolio"
+        type: "open_pit_underground"
+        annual_production_oz: 5900000  # 2025 guidance
+        annual_silver_production_oz: 530000000  # Reserve base
+        life_of_mine_gold_oz: 134100000  # 2024 reserves
+        life_of_mine_silver_oz:
+        mi_and_i_gold_moz: 134.1
+        mi_and_i_silver_moz: 530
+        production_basis: "2025 guidance from Q4 2024 earnings; reserves from 2024 reserves report"
+        production_source: "Newmont Q4 2024 Results & 2025 Guidance"
+        production_source_date: "2025-02-20"
+        aisc_per_oz: 1550  # Trending from $1,620 guidance toward $1,502 Q3 2025
+        mine_life_years: 23  # 134M reserves / ~5.9M annual
+        initial_capex_millions: 0  # Already in production
+        production_start_year: 2025  # Currently producing
+        stage: "production"
+        jurisdiction: "Global (USA, Australia, Ghana, Peru, Canada)"
+        grade_g_per_t: 1.1
+        recovery_rate: 0.88
+    control_factor: 0.15  # Major producer, lower benchmark penalty
+    notes: "World's largest gold miner. Acquired Newcrest 2023. 134M oz reserves across 12+ operations."
+
 # Display order for dashboards
 display_order:
   - DC
   - PPTA
   - HYMC
+  - NEM

@@ -151,3 +151,5 @@ company_overrides:
     control: 4  # Government support, experienced team
   HYMC:
     control: 2  # Checkered history, celebrity investors
+  NEM:
+    control: 4  # World's largest producer, proven operators, strong institutional management

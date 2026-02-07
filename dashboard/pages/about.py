@@ -29,7 +29,7 @@ def render_about():
         st.markdown("""
         **Stock Prices & Market Data**
         - Source: **Yahoo Finance API** (via `yfinance` library)
-        - Tickers: `DC`, `PPTA`, `HYMC`
+        - Tickers: `DC`, `PPTA`, `HYMC`, `NEM`
         - Updates: Every page load (cached 15 minutes)
         - Data includes:
             - Current share price
@@ -232,7 +232,7 @@ def render_about():
         Adjusted = Mining Return - (Control Factor × 18% Benchmark)
         ```
         - Benchmark: Self-storage at 18% IRR
-        - Control factors: 0.20-0.30 per company
+        - Control factors: 0.15-0.30 per company
 
         **Risk Scoring (1-5 scale)**
         - 1 = Highest risk
