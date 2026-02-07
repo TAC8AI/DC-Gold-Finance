@@ -12,6 +12,14 @@ companies:
         name: "Richmond Hill"
         type: "heap_leach"
         annual_production_oz: 153000
+        annual_silver_production_oz:
+        life_of_mine_gold_oz:
+        life_of_mine_silver_oz:
+        mi_and_i_gold_moz:
+        mi_and_i_silver_moz:
+        production_basis: "Model assumption for base-case valuation"
+        production_source: "Internal model configuration"
+        production_source_date: "2026-02-07"
         aisc_per_oz: 1050
         mine_life_years: 17
         initial_capex_millions: 384
@@ -33,6 +41,14 @@ companies:
         name: "Stibnite Gold Project"
         type: "open_pit_underground"
         annual_production_oz: 450000  # Peak production estimate
+        annual_silver_production_oz:
+        life_of_mine_gold_oz:
+        life_of_mine_silver_oz:
+        mi_and_i_gold_moz:
+        mi_and_i_silver_moz:
+        production_basis: "Model assumption using peak gold production"
+        production_source: "Internal model configuration"
+        production_source_date: "2026-02-07"
         aisc_per_oz: 900
         mine_life_years: 15
         initial_capex_millions: 1800
@@ -55,6 +71,14 @@ companies:
         name: "Hycroft Mine"
         type: "heap_leach"
         annual_production_oz: 80000  # Current/near-term target
+        annual_silver_production_oz:
+        life_of_mine_gold_oz:
+        life_of_mine_silver_oz:
+        mi_and_i_gold_moz: 10.6
+        mi_and_i_silver_moz: 361
+        production_basis: "M&I resource context from technical report; annual output remains modeled"
+        production_source: "Hycroft March 2023 technical report"
+        production_source_date: "2023-03-31"
         aisc_per_oz: 1600
         mine_life_years: 20
         initial_capex_millions: 200

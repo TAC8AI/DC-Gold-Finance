@@ -112,6 +112,7 @@ def main():
                 "Signals Feed",
                 "About"
             ],
+            index=2,
             label_visibility="collapsed"
         )
 

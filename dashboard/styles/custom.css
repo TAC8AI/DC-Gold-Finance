@@ -396,3 +396,63 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
     background: rgba(17, 156, 91, 0.15);
     color: #0f7d4b;
 }
+
+/* Executive summary helpers */
+.coverage-card {
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 249, 255, 0.98) 100%);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(20, 42, 76, 0.08);
+    min-height: 148px;
+    padding: 0.7rem 0.75rem;
+}
+
+.coverage-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.coverage-ticker {
+    color: var(--brand);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.coverage-risk {
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 0.16rem 0.46rem;
+    text-transform: uppercase;
+}
+
+.risk-tier-high {
+    background: rgba(214, 66, 66, 0.13);
+    color: #a82d2d;
+}
+
+.risk-tier-moderate {
+    background: rgba(196, 133, 18, 0.13);
+    color: #93620d;
+}
+
+.risk-tier-low {
+    background: rgba(17, 156, 91, 0.14);
+    color: #0e7a47;
+}
+
+.coverage-name {
+    color: var(--ink);
+    font-size: 0.86rem;
+    font-weight: 600;
+    margin-top: 0.28rem;
+}
+
+.coverage-line {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    margin-top: 0.2rem;
+}
