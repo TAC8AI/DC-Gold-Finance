@@ -1,0 +1,153 @@
+# Risk Scoring Framework for Junior Gold Miners
+# Each category scored 1-5 (1=highest risk, 5=lowest risk)
+
+categories:
+  funding:
+    weight: 0.25
+    name: "Funding Risk"
+    description: "Ability to finance development without excessive dilution"
+    scoring_criteria:
+      1:
+        label: "Critical"
+        description: "< 6 months runway, no clear funding path"
+      2:
+        label: "High Risk"
+        description: "6-12 months runway, significant dilution expected"
+      3:
+        label: "Moderate"
+        description: "12-18 months runway, manageable financing needs"
+      4:
+        label: "Low Risk"
+        description: "18-24 months runway, multiple funding options"
+      5:
+        label: "Minimal"
+        description: "> 24 months runway or fully financed"
+    thresholds:
+      runway_months:
+        critical: 6
+        high: 12
+        moderate: 18
+        low: 24
+
+  execution:
+    weight: 0.25
+    name: "Execution Risk"
+    description: "Ability to build and operate the project on time and budget"
+    scoring_criteria:
+      1:
+        label: "Critical"
+        description: "Early exploration, unproven resource"
+      2:
+        label: "High Risk"
+        description: "PEA stage, significant technical uncertainty"
+      3:
+        label: "Moderate"
+        description: "PFS/FS complete, permitting in progress"
+      4:
+        label: "Low Risk"
+        description: "Permitted, construction ready or underway"
+      5:
+        label: "Minimal"
+        description: "Operating mine with track record"
+    stage_scores:
+      exploration: 1
+      pea: 2
+      pfs: 3
+      fs: 3
+      permitting: 3
+      construction: 4
+      production: 5
+
+  commodity:
+    weight: 0.20
+    name: "Commodity Price Risk"
+    description: "Sensitivity to gold price movements based on cost structure"
+    scoring_criteria:
+      1:
+        label: "Critical"
+        description: "AISC > $1,600/oz, marginal at current prices"
+      2:
+        label: "High Risk"
+        description: "AISC $1,400-1,600/oz, limited margin"
+      3:
+        label: "Moderate"
+        description: "AISC $1,200-1,400/oz, reasonable margin"
+      4:
+        label: "Low Risk"
+        description: "AISC $1,000-1,200/oz, strong margin"
+      5:
+        label: "Minimal"
+        description: "AISC < $1,000/oz, excellent margin"
+    thresholds:
+      aisc:
+        critical: 1600
+        high: 1400
+        moderate: 1200
+        low: 1000
+
+  control:
+    weight: 0.15
+    name: "Management/Control Risk"
+    description: "Quality of management and alignment with shareholders"
+    scoring_criteria:
+      1:
+        label: "Critical"
+        description: "Unproven team, history of value destruction"
+      2:
+        label: "High Risk"
+        description: "Mixed track record, governance concerns"
+      3:
+        label: "Moderate"
+        description: "Competent team, standard alignment"
+      4:
+        label: "Low Risk"
+        description: "Strong team, good shareholder returns history"
+      5:
+        label: "Minimal"
+        description: "Proven operators, exceptional track record"
+    # These are manual assessments stored in company configs
+    default_score: 3
+
+  timing:
+    weight: 0.15
+    name: "Timing Risk"
+    description: "Time to production and associated risks"
+    scoring_criteria:
+      1:
+        label: "Critical"
+        description: "> 5 years to production"
+      2:
+        label: "High Risk"
+        description: "4-5 years to production"
+      3:
+        label: "Moderate"
+        description: "3-4 years to production"
+      4:
+        label: "Low Risk"
+        description: "1-2 years to production"
+      5:
+        label: "Minimal"
+        description: "Currently producing or < 1 year"
+    thresholds:
+      years_to_production:
+        critical: 5
+        high: 4
+        moderate: 3
+        low: 2
+
+# Overall risk interpretation
+overall_score_interpretation:
+  1.0-1.5: "Very High Risk - Speculative"
+  1.5-2.5: "High Risk - Significant Concerns"
+  2.5-3.5: "Moderate Risk - Manageable"
+  3.5-4.5: "Low Risk - Favorable Profile"
+  4.5-5.0: "Minimal Risk - Strong Position"
+
+# Company-specific overrides (manual assessments)
+company_overrides:
+  DC:
+    control: 4  # Strong management team (ex-Barrick/Newmont)
+  PPTA:
+    control: 4  # Government support, experienced team
+  HYMC:
+    control: 2  # Checkered history, celebrity investors
