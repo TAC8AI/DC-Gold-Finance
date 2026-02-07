@@ -9,6 +9,7 @@ from financial_models.metrics_calculator import MetricsCalculator
 from risk_engine.risk_scorer import RiskScorer
 from data_ingestion.gold_price_fetcher import GoldPriceFetcher
 from benchmarks.adjusted_return import AdjustedReturnCalculator
+from dashboard.report_generator import generate_report
 
 
 def render_executive_summary(tickers: List[str]):
@@ -194,3 +195,15 @@ def render_executive_summary(tickers: List[str]):
             **All Companies:** Moderate to Low Risk
             - Portfolio is well-positioned
             """)
+
+    # Export report
+    st.markdown("---")
+    st.markdown("### Export Report")
+    report_html = generate_report(tickers)
+    date_tag = datetime.now().strftime("%Y-%m-%d")
+    st.download_button(
+        label="Download Portfolio Report (HTML)",
+        data=report_html,
+        file_name=f"JuniorGoldIntel_Report_{date_tag}.html",
+        mime="text/html"
+    )

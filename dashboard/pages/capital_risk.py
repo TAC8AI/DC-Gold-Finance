@@ -1,336 +1,396 @@
 """
-Capital & Risk Analysis page: Runway, dilution, funding
+Capital & Risk Analysis page: runway, dilution, funding
 """
-import streamlit as st
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-from typing import List
+from datetime import datetime
+from typing import Dict, List
 
-from financial_models.cash_analysis import CashAnalyzer
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
+
+from data_ingestion.data_normalizer import DataNormalizer
 from financial_models.capital_structure import CapitalStructureAnalyzer
+from financial_models.cash_analysis import CashAnalyzer
 from financial_models.dilution_scenarios import DilutionScenarioModeler
 from risk_engine.risk_scorer import RiskScorer
-from data_ingestion.data_normalizer import DataNormalizer
+
+
+def _fmt_time(value: str) -> str:
+    """Safely format timestamps for compact display."""
+    if not value:
+        return "N/A"
+    try:
+        parsed = datetime.fromisoformat(value)
+        return parsed.strftime("%Y-%m-%d %H:%M")
+    except Exception:
+        return str(value)[:16]
+
+
+def _risk_chip_class(level: str) -> str:
+    """Map risk level to CSS chip class."""
+    mapping = {
+        "critical": "risk-critical-chip",
+        "high": "risk-high-chip",
+        "moderate": "risk-moderate-chip",
+        "low": "risk-low-chip",
+        "minimal": "risk-minimal-chip",
+    }
+    return mapping.get((level or "").lower(), "risk-moderate-chip")
+
+
+def _runway_timeline_chart(runway_months: float, max_runway: float = 36) -> go.Figure:
+    """Render a cleaner runway timeline with threshold zones."""
+    runway_value = max(0, min(runway_months or 0, max_runway))
+
+    fig = go.Figure()
+    zone_defs = [
+        (0, 6, "#ffe1e1"),
+        (6, 12, "#ffeac9"),
+        (12, 18, "#fff6c9"),
+        (18, max_runway, "#dcf8e7"),
+    ]
+
+    for start, end, color in zone_defs:
+        fig.add_shape(
+            type="rect",
+            x0=start,
+            y0=-0.35,
+            x1=end,
+            y1=0.35,
+            line=dict(width=0),
+            fillcolor=color,
+            layer="below",
+        )
+
+    fig.add_trace(go.Bar(
+        x=[runway_value],
+        y=["Runway"],
+        orientation="h",
+        marker=dict(color="#1f58c7"),
+        text=[f"{runway_months:.1f} mo" if runway_months else "N/A"],
+        textposition="inside",
+        insidetextanchor="middle",
+        hovertemplate="Runway: %{x:.1f} months<extra></extra>",
+    ))
+
+    for threshold in [6, 12, 18]:
+        fig.add_vline(x=threshold, line_width=1.5, line_color="#7a889b", line_dash="dot")
+
+    fig.update_layout(
+        title="Cash Runway Timeline",
+        xaxis=dict(
+            range=[0, max_runway],
+            tickvals=[0, 6, 12, 18, 24, 30, 36],
+            title="Months",
+            gridcolor="rgba(16,35,60,0.08)",
+        ),
+        yaxis=dict(showticklabels=False, showgrid=False, zeroline=False),
+        margin=dict(l=10, r=15, t=44, b=30),
+        height=260,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def _cash_vs_capex_chart(cash: float, capex: float) -> go.Figure:
+    """Cash vs required capex grouped bars."""
+    fig = go.Figure(data=[
+        go.Bar(
+            name="Cash on Hand",
+            x=["Funding"],
+            y=[cash],
+            marker_color="#17a562",
+            text=[f"${cash:.0f}M"],
+            textposition="outside",
+        ),
+        go.Bar(
+            name="Required Capex",
+            x=["Funding"],
+            y=[capex],
+            marker_color="#8ea1bb",
+            text=[f"${capex:.0f}M"],
+            textposition="outside",
+        ),
+    ])
+    fig.update_layout(
+        barmode="group",
+        title="Cash vs Required Capex",
+        yaxis_title="$ Millions",
+        height=260,
+        margin=dict(l=10, r=10, t=44, b=20),
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    fig.update_yaxes(gridcolor="rgba(16,35,60,0.08)")
+    return fig
+
+
+def _dilution_probability_chart(scenarios: Dict) -> go.Figure:
+    """Visualize dilution scenarios by probability and severity."""
+    rows = []
+    for name, scenario in scenarios.items():
+        rows.append({
+            "Scenario": scenario.get("name", name),
+            "Dilution %": scenario.get("dilution_percentage", 0),
+            "Probability %": scenario.get("probability", 0) * 100,
+        })
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return go.Figure()
+
+    fig = px.bar(
+        df,
+        x="Scenario",
+        y="Dilution %",
+        color="Probability %",
+        color_continuous_scale=["#d9e9ff", "#8fb8ff", "#2f67d7"],
+        text="Dilution %",
+        title="Dilution Severity by Scenario",
+    )
+    fig.update_traces(texttemplate="%{text:.0f}%", textposition="outside")
+    fig.update_layout(
+        height=330,
+        margin=dict(l=10, r=10, t=44, b=20),
+        coloraxis_colorbar=dict(title="Prob %"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    fig.update_yaxes(gridcolor="rgba(16,35,60,0.08)")
+    return fig
 
 
 def render_capital_risk(tickers: List[str], selected_ticker: str = None):
-    """Render capital and risk analysis page"""
-
-    st.markdown("## Capital & Risk Analysis")
-    st.markdown("Cash runway, dilution scenarios, and funding requirements")
-
-    # Initialize
+    """Render capital and risk analysis page."""
     cash_analyzer = CashAnalyzer()
     capital_analyzer = CapitalStructureAnalyzer()
     dilution_modeler = DilutionScenarioModeler()
     risk_scorer = RiskScorer()
     normalizer = DataNormalizer()
 
-    # Company selector
-    selected = st.selectbox(
-        "Select Company",
-        tickers,
-        index=tickers.index(selected_ticker) if selected_ticker in tickers else 0
-    )
+    st.markdown("""
+    <div class="capital-hero">
+        <div class="capital-hero-kicker">Investor Readout</div>
+        <div class="capital-hero-title">Capital & Risk Analysis</div>
+        <div class="capital-hero-sub">Cash runway, dilution scenarios, and funding requirements for financing discussions.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Get all data
+    selector_col, meta_col = st.columns([2.2, 1.1])
+    with selector_col:
+        selected = st.selectbox(
+            "Select Company",
+            tickers,
+            index=tickers.index(selected_ticker) if selected_ticker in tickers else 0
+        )
+    with meta_col:
+        st.markdown("#### Decision Lens")
+        st.caption("Runway health, funding gap, and dilution path")
+
     company_data = normalizer.get_normalized_company_data(selected)
     cash_data = cash_analyzer.analyze_cash_position(selected)
     capital_data = capital_analyzer.analyze_structure(selected)
     dilution_data = dilution_modeler.model_scenarios(selected)
     risk_data = risk_scorer.calculate_composite_score(selected)
 
-    st.markdown(f"### {company_data.get('name', selected)}")
+    project = company_data.get("project", {})
+    cash = cash_data.get("current_cash_millions", 0)
+    capex = project.get("initial_capex_millions", 0)
+    funding_gap = max(0, capex - cash)
+    capex_coverage = (cash / capex * 100) if capex else 0
+    runway = cash_data.get("runway_months", 0)
+    risk_level = cash_data.get("runway_risk", {}).get("level", "unknown")
+    risk_chip = _risk_chip_class(risk_level)
+    composite_score = risk_data.get("composite_score", 0)
 
-    st.markdown("---")
+    st.markdown(
+        f"""
+        <div class="source-strip">
+            <span><strong>{company_data.get('name', selected)}</strong></span>
+            <span>Cash data as of: { _fmt_time(cash_data.get('analysis_time')) }</span>
+            <span>Risk model as of: { _fmt_time(risk_data.get('analysis_time')) }</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # Cash Runway Section
-    st.markdown("### Cash Position & Runway")
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.metric(
-            "Cash on Hand",
-            f"${cash_data.get('current_cash_millions', 0):.1f}M"
-        )
-
-    with col2:
-        st.metric(
-            "Quarterly Burn",
-            f"${cash_data.get('quarterly_burn_millions', 0):.1f}M"
-        )
-
-    with col3:
-        runway = cash_data.get('runway_months', 0)
-        delta_color = "normal" if runway >= 18 else "inverse" if runway < 12 else "off"
-        st.metric(
-            "Runway",
-            f"{runway:.0f} months" if runway else "N/A",
-            delta_color=delta_color
-        )
-
-    with col4:
-        risk_level = cash_data.get('runway_risk', {}).get('level', 'unknown')
-        st.metric("Funding Risk", risk_level.title())
-
-    # Runway gauge
-    col1, col2 = st.columns([1, 1])
-
-    with col1:
-        runway_months = cash_data.get('runway_months', 0)
-        max_runway = 36
-
-        fig = go.Figure(go.Indicator(
-            mode="gauge+number+delta",
-            value=runway_months,
-            number={'suffix': " months"},
-            delta={'reference': 18, 'position': "bottom"},
-            domain={'x': [0, 1], 'y': [0, 1]},
-            title={'text': "Cash Runway"},
-            gauge={
-                'axis': {'range': [0, max_runway], 'tickwidth': 1},
-                'bar': {'color': "#3b82f6"},
-                'bgcolor': "white",
-                'borderwidth': 2,
-                'steps': [
-                    {'range': [0, 6], 'color': '#fecaca'},
-                    {'range': [6, 12], 'color': '#fed7aa'},
-                    {'range': [12, 18], 'color': '#fef08a'},
-                    {'range': [18, max_runway], 'color': '#bbf7d0'}
-                ],
-                'threshold': {
-                    'line': {'color': "red", 'width': 4},
-                    'thickness': 0.75,
-                    'value': 12
-                }
-            }
-        ))
-        fig.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        # Cash vs Capex comparison
-        project = company_data.get('project', {})
-        capex = project.get('initial_capex_millions', 0)
-        cash = cash_data.get('current_cash_millions', 0)
-        funding_gap = max(0, capex - cash)
-
-        fig = go.Figure(data=[
-            go.Bar(name='Cash on Hand', x=['Funding'], y=[cash], marker_color='#22c55e'),
-            go.Bar(name='Required Capex', x=['Funding'], y=[capex], marker_color='#94a3b8'),
-        ])
-        fig.update_layout(
-            barmode='group',
-            title="Cash vs Required Capex",
-            height=300,
-            yaxis_title="$ Millions"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        st.metric("Cash on Hand", f"${cash:.1f}M")
+    with c2:
+        st.metric("Quarterly Burn", f"${cash_data.get('quarterly_burn_millions', 0):.1f}M")
+    with c3:
+        st.metric("Runway", f"{runway:.0f} months" if runway else "N/A")
+    with c4:
         st.metric("Funding Gap", f"${funding_gap:.0f}M")
+    with c5:
+        st.metric("Composite Risk", f"{composite_score:.1f}/5" if composite_score else "N/A")
+        st.markdown(
+            f"<span class='funding-risk-chip {risk_chip}'>{risk_level.title()} Funding Risk</span>",
+            unsafe_allow_html=True
+        )
+
+    runway_col, funding_col = st.columns(2)
+    with runway_col:
+        st.plotly_chart(_runway_timeline_chart(runway), use_container_width=True)
+        st.caption("Thresholds: <6 critical, 6-12 high, 12-18 moderate, >18 lower risk.")
+
+    with funding_col:
+        st.plotly_chart(_cash_vs_capex_chart(cash, capex), use_container_width=True)
+        st.metric("Capex Coverage", f"{capex_coverage:.1f}%")
+        st.caption(f"Estimated uncovered capex: ${funding_gap:.0f}M")
 
     st.markdown("---")
 
-    # Dilution Scenarios
     st.markdown("### Dilution Scenarios")
+    if "error" not in dilution_data:
+        scenarios = dilution_data.get("scenarios", {})
 
-    if 'error' not in dilution_data:
-        scenarios = dilution_data.get('scenarios', {})
+        dcol1, dcol2 = st.columns(2)
+        with dcol1:
+            st.plotly_chart(_dilution_probability_chart(scenarios), use_container_width=True)
+        with dcol2:
+            fig = go.Figure(go.Waterfall(
+                name="Shares",
+                orientation="v",
+                x=["Current"] + [s.get("name", "") for s in scenarios.values()],
+                y=[dilution_data.get("current_shares_millions", 0)] +
+                  [s.get("new_shares_millions", 0) * s.get("probability", 0) for s in scenarios.values()],
+                connector={"line": {"color": "rgb(63, 63, 63)"}},
+                text=[f"{dilution_data.get('current_shares_millions', 0):.1f}M"] +
+                     [f"+{s.get('new_shares_millions', 0):.1f}M" for s in scenarios.values()],
+                textposition="outside"
+            ))
+            fig.update_layout(
+                title="Probability-Weighted Share Impact",
+                height=330,
+                yaxis_title="Shares (Millions)",
+                margin=dict(l=10, r=10, t=44, b=20),
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-        # Create scenario comparison table
         scenario_rows = []
         for name, scenario in scenarios.items():
             scenario_rows.append({
-                'Scenario': scenario.get('name', name),
-                'Dilution': f"{scenario.get('dilution_percentage', 0)}%",
-                'Probability': f"{scenario.get('probability', 0) * 100:.0f}%",
-                'New Shares (M)': f"{scenario.get('new_shares_millions', 0):.1f}",
-                'Post Shares (M)': f"{scenario.get('post_shares_millions', 0):.1f}",
-                'Ownership After': f"{scenario.get('ownership_post', 0):.1f}%"
+                "Scenario": scenario.get("name", name),
+                "Dilution": f"{scenario.get('dilution_percentage', 0)}%",
+                "Probability": f"{scenario.get('probability', 0) * 100:.0f}%",
+                "New Shares (M)": f"{scenario.get('new_shares_millions', 0):.1f}",
+                "Post Shares (M)": f"{scenario.get('post_shares_millions', 0):.1f}",
+                "Ownership After": f"{scenario.get('ownership_post', 0):.1f}%",
             })
 
         scenario_df = pd.DataFrame(scenario_rows)
         st.dataframe(scenario_df, use_container_width=True, hide_index=True)
 
-        # Expected dilution
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.metric(
-                "Expected Dilution",
-                f"{dilution_data.get('expected_dilution_percentage', 0):.0f}%"
-            )
-
-        with col2:
-            current_shares = dilution_data.get('current_shares_millions', 0)
-            expected_shares = dilution_data.get('expected_post_shares_millions', 0)
-            st.metric(
-                "Current Shares",
-                f"{current_shares:.1f}M",
-                f"+{expected_shares - current_shares:.1f}M expected"
-            )
-
-        with col3:
-            st.metric(
-                "Expected Ownership",
-                f"{dilution_data.get('expected_ownership_post', 0):.1f}%",
-                f"-{100 - dilution_data.get('expected_ownership_post', 100):.1f}%"
-            )
-
-        # Dilution waterfall chart
-        fig = go.Figure(go.Waterfall(
-            name="Shares",
-            orientation="v",
-            x=["Current"] + [s.get('name', '') for s in scenarios.values()],
-            y=[dilution_data.get('current_shares_millions', 0)] +
-              [s.get('new_shares_millions', 0) * s.get('probability', 0) for s in scenarios.values()],
-            connector={"line": {"color": "rgb(63, 63, 63)"}},
-            text=[f"{dilution_data.get('current_shares_millions', 0):.1f}M"] +
-                 [f"+{s.get('new_shares_millions', 0):.1f}M" for s in scenarios.values()],
-            textposition="outside"
-        ))
-        fig.update_layout(
-            title="Share Count Waterfall (Probability Weighted)",
-            height=350,
-            yaxis_title="Shares (Millions)"
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        e1, e2, e3 = st.columns(3)
+        with e1:
+            st.metric("Expected Dilution", f"{dilution_data.get('expected_dilution_percentage', 0):.0f}%")
+        with e2:
+            current_shares = dilution_data.get("current_shares_millions", 0)
+            expected_shares = dilution_data.get("expected_post_shares_millions", 0)
+            st.metric("Current Shares", f"{current_shares:.1f}M", f"+{expected_shares - current_shares:.1f}M expected")
+        with e3:
+            expected_ownership = dilution_data.get("expected_ownership_post", 0)
+            st.metric("Expected Ownership", f"{expected_ownership:.1f}%", f"-{100 - expected_ownership:.1f}%")
 
     st.markdown("---")
 
-    # Capital Structure
     st.markdown("### Capital Structure")
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.metric(
-            "Shares Outstanding",
-            f"{capital_data.get('shares_outstanding_millions', 0):.1f}M"
-        )
-
-    with col2:
-        st.metric(
-            "Float",
-            f"{capital_data.get('float_percentage', 0):.1f}%"
-        )
-
-    with col3:
-        st.metric(
-            "Total Debt",
-            f"${capital_data.get('total_debt_millions', 0):.1f}M"
-        )
-
-    with col4:
-        st.metric(
-            "Enterprise Value",
-            f"${capital_data.get('ev_millions', 0):.0f}M"
-        )
+    cs1, cs2, cs3, cs4 = st.columns(4)
+    with cs1:
+        st.metric("Shares Outstanding", f"{capital_data.get('shares_outstanding_millions', 0):.1f}M")
+    with cs2:
+        st.metric("Float", f"{capital_data.get('float_percentage', 0):.1f}%")
+    with cs3:
+        st.metric("Total Debt", f"${capital_data.get('total_debt_millions', 0):.1f}M")
+    with cs4:
+        st.metric("Enterprise Value", f"${capital_data.get('ev_millions', 0):.0f}M")
 
     st.markdown("---")
 
-    # Risk Score Breakdown
     st.markdown("### Risk Score Breakdown")
+    if "error" not in risk_data:
+        categories = risk_data.get("categories", {})
+        interpretation = risk_data.get("interpretation", {})
+        weakest = risk_data.get("weakest_category", "")
+        weakest_score = risk_data.get("weakest_score", 0)
 
-    if 'error' not in risk_data:
-        categories = risk_data.get('categories', {})
-
-        col1, col2 = st.columns([1, 2])
-
-        with col1:
-            # Overall score gauge
-            composite = risk_data.get('composite_score', 0)
-
-            fig = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=composite,
-                domain={'x': [0, 1], 'y': [0, 1]},
-                title={'text': "Composite Risk Score"},
-                gauge={
-                    'axis': {'range': [1, 5]},
-                    'bar': {'color': "#3b82f6"},
-                    'steps': [
-                        {'range': [1, 2], 'color': '#fecaca'},
-                        {'range': [2, 3], 'color': '#fed7aa'},
-                        {'range': [3, 4], 'color': '#fef08a'},
-                        {'range': [4, 5], 'color': '#bbf7d0'}
-                    ]
-                }
-            ))
-            fig.update_layout(height=250, margin=dict(l=20, r=20, t=50, b=20))
-            st.plotly_chart(fig, use_container_width=True)
-
-            interpretation = risk_data.get('interpretation', {})
+        r1, r2 = st.columns([1, 2])
+        with r1:
+            st.metric("Composite Score", f"{composite_score:.2f}/5" if composite_score else "N/A")
             st.markdown(f"**{interpretation.get('level', 'Unknown')}**")
-            st.caption(interpretation.get('description', ''))
+            st.caption(interpretation.get("description", ""))
+            if weakest:
+                st.caption(f"Weakest category: {weakest.title()} ({weakest_score:.1f}/5)")
 
-        with col2:
-            # Category breakdown
+        with r2:
             cat_data = []
             for name, cat in categories.items():
                 cat_data.append({
-                    'Category': name.title(),
-                    'Score': cat.get('score', 0),
-                    'Weight': f"{cat.get('weight', 0) * 100:.0f}%",
-                    'Level': cat.get('level', 'unknown').title(),
-                    'Description': cat.get('description', '')
+                    "Category": name.title(),
+                    "Score": cat.get("score", 0),
+                    "Weight": f"{cat.get('weight', 0) * 100:.0f}%",
+                    "Level": cat.get("level", "unknown").title(),
+                    "Description": cat.get("description", "")
                 })
 
             cat_df = pd.DataFrame(cat_data)
-
-            # Horizontal bar chart
             fig = px.bar(
                 cat_df,
-                y='Category',
-                x='Score',
-                color='Score',
-                color_continuous_scale='RdYlGn',
-                orientation='h',
-                text='Score',
-                title="Risk Scores by Category (1=Highest Risk, 5=Lowest)"
+                y="Category",
+                x="Score",
+                color="Score",
+                color_continuous_scale=["#ffdfdf", "#ffe9bf", "#fff6bf", "#dff7eb"],
+                orientation="h",
+                text="Score",
+                title="Risk Scores by Category (1 = highest risk, 5 = lowest)",
             )
-            fig.update_traces(texttemplate='%{text:.1f}', textposition='outside')
-            fig.update_layout(height=300, xaxis_range=[0, 5.5])
+            fig.update_traces(texttemplate="%{text:.1f}", textposition="outside")
+            fig.update_layout(
+                height=310,
+                xaxis_range=[0, 5.5],
+                margin=dict(l=10, r=10, t=44, b=20),
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+            )
+            fig.update_xaxes(gridcolor="rgba(16,35,60,0.08)")
             st.plotly_chart(fig, use_container_width=True)
 
-        # Detailed breakdown table
         st.dataframe(cat_df, use_container_width=True, hide_index=True)
 
-        # Weakest category callout
-        weakest = risk_data.get('weakest_category', '')
-        weakest_score = risk_data.get('weakest_score', 0)
-
         if weakest_score <= 2:
-            st.warning(f"**Attention:** {weakest.title()} risk is elevated (score: {weakest_score}/5)")
+            st.warning(f"Attention: {weakest.title()} risk is elevated ({weakest_score:.1f}/5).")
         elif weakest_score <= 3:
-            st.info(f"**Monitor:** {weakest.title()} is the weakest category (score: {weakest_score}/5)")
+            st.info(f"Monitor: {weakest.title()} is the weakest category ({weakest_score:.1f}/5).")
 
     st.markdown("---")
 
-    # All Companies Comparison
     st.markdown("### Cross-Company Risk Comparison")
-
     comparison_data = []
     for ticker in tickers:
         risk = risk_scorer.calculate_composite_score(ticker)
-        if 'error' not in risk:
+        if "error" not in risk:
             comparison_data.append({
-                'Ticker': ticker,
-                'Composite': risk.get('composite_score', 0),
-                'Funding': risk.get('funding_score', 0),
-                'Execution': risk.get('execution_score', 0),
-                'Commodity': risk.get('commodity_score', 0),
-                'Control': risk.get('control_score', 0),
-                'Timing': risk.get('timing_score', 0),
-                'Weakest': risk.get('weakest_category', '').title()
+                "Ticker": ticker,
+                "Composite": risk.get("composite_score", 0),
+                "Funding": risk.get("funding_score", 0),
+                "Execution": risk.get("execution_score", 0),
+                "Commodity": risk.get("commodity_score", 0),
+                "Control": risk.get("control_score", 0),
+                "Timing": risk.get("timing_score", 0),
+                "Weakest": risk.get("weakest_category", "").title(),
             })
 
     if comparison_data:
         comp_df = pd.DataFrame(comparison_data)
         st.dataframe(
-            comp_df.style.background_gradient(subset=['Composite'], cmap='RdYlGn'),
+            comp_df.style.background_gradient(subset=["Composite"], cmap="RdYlGn"),
             use_container_width=True,
-            hide_index=True
+            hide_index=True,
         )

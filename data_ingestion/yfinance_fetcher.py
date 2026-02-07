@@ -23,6 +23,34 @@ class YFinanceFetcher:
         """Generate cache key for ticker data"""
         return f"yf_{ticker}_{data_type}_{datetime.now().strftime('%Y%m%d')}"
 
+    @staticmethod
+    def _extract_statement_value(statement: pd.DataFrame, row_names: list) -> Optional[float]:
+        """
+        Extract the first non-null numeric value from the first matching row.
+        Statement columns are typically ordered latest -> oldest.
+        """
+        if statement.empty:
+            return None
+
+        for row_name in row_names:
+            if row_name not in statement.index:
+                continue
+
+            row = statement.loc[row_name]
+            if isinstance(row, pd.Series):
+                values = row.tolist()
+            else:
+                values = [row]
+
+            for value in values:
+                if pd.notna(value):
+                    try:
+                        return float(value)
+                    except (TypeError, ValueError):
+                        continue
+
+        return None
+
     def get_stock_info(self, ticker: str) -> Dict[str, Any]:
         """
         Get basic stock info including price, market cap, etc.
@@ -163,7 +191,8 @@ class YFinanceFetcher:
         Returns:
             Dictionary with cash metrics
         """
-        cache_key = self._cache_key(ticker, 'cash')
+        # Bump cache namespace so improved extraction logic is used immediately.
+        cache_key = self._cache_key(ticker, 'cash_v2')
 
         if self.use_cache:
             cached = self.cache.get(cache_key)
@@ -172,8 +201,14 @@ class YFinanceFetcher:
 
         try:
             stock = yf.Ticker(ticker)
-            balance_sheet = stock.balance_sheet
-            cash_flow = stock.cashflow
+            quarterly_balance_sheet = stock.quarterly_balance_sheet
+            annual_balance_sheet = stock.balance_sheet
+            quarterly_cash_flow = stock.quarterly_cashflow
+            annual_cash_flow = stock.cashflow
+            try:
+                info = stock.info
+            except Exception:
+                info = {}
 
             result = {
                 'ticker': ticker,
@@ -187,26 +222,71 @@ class YFinanceFetcher:
                 'fetch_time': datetime.now().isoformat()
             }
 
-            # Extract cash from balance sheet
-            if not balance_sheet.empty:
-                if 'Cash And Cash Equivalents' in balance_sheet.index:
-                    result['cash_and_equivalents'] = float(balance_sheet.loc['Cash And Cash Equivalents'].iloc[0] or 0)
-                if 'Other Short Term Investments' in balance_sheet.index:
-                    result['short_term_investments'] = float(balance_sheet.loc['Other Short Term Investments'].iloc[0] or 0)
-                if 'Total Debt' in balance_sheet.index:
-                    result['total_debt'] = float(balance_sheet.loc['Total Debt'].iloc[0] or 0)
+            # Prefer quarterly statements for current runway; fallback to annual.
+            balance_sheet = (
+                quarterly_balance_sheet
+                if not quarterly_balance_sheet.empty
+                else annual_balance_sheet
+            )
 
-            result['total_cash'] = result['cash_and_equivalents'] + result['short_term_investments']
+            total_cash_from_bs = self._extract_statement_value(
+                balance_sheet,
+                [
+                    'Cash Cash Equivalents And Short Term Investments',
+                    'Cash And Short Term Investments'
+                ]
+            )
+            cash_and_eq = self._extract_statement_value(
+                balance_sheet,
+                ['Cash And Cash Equivalents']
+            )
+            short_term_inv = self._extract_statement_value(
+                balance_sheet,
+                ['Other Short Term Investments']
+            )
+            total_debt = self._extract_statement_value(
+                balance_sheet,
+                ['Total Debt']
+            )
+
+            if cash_and_eq is not None:
+                result['cash_and_equivalents'] = cash_and_eq
+            if short_term_inv is not None:
+                result['short_term_investments'] = short_term_inv
+            if total_debt is not None:
+                result['total_debt'] = total_debt
+
+            if total_cash_from_bs is not None and total_cash_from_bs > 0:
+                result['total_cash'] = total_cash_from_bs
+                # Avoid showing 0 cash components when the statement only exposes aggregate cash.
+                if result['cash_and_equivalents'] == 0 and result['short_term_investments'] == 0:
+                    result['cash_and_equivalents'] = total_cash_from_bs
+            else:
+                result['total_cash'] = result['cash_and_equivalents'] + result['short_term_investments']
+
+            # Fallback to quote summary fields when statements are sparse/stale.
+            info_total_cash = info.get('totalCash') if isinstance(info, dict) else None
+            info_total_debt = info.get('totalDebt') if isinstance(info, dict) else None
+            if isinstance(info_total_cash, (int, float)) and info_total_cash > result['total_cash']:
+                result['total_cash'] = float(info_total_cash)
+                if result['cash_and_equivalents'] == 0:
+                    result['cash_and_equivalents'] = float(info_total_cash)
+            if isinstance(info_total_debt, (int, float)) and result['total_debt'] == 0:
+                result['total_debt'] = float(info_total_debt)
+
             result['net_cash'] = result['total_cash'] - result['total_debt']
 
-            # Estimate quarterly burn from cash flow
-            if not cash_flow.empty and 'Free Cash Flow' in cash_flow.index:
-                fcf = cash_flow.loc['Free Cash Flow'].iloc[0]
-                if fcf and fcf < 0:
-                    # Annual burn / 4 = quarterly
-                    result['quarterly_cash_burn'] = abs(float(fcf)) / 4
-                    if result['quarterly_cash_burn'] > 0:
-                        result['runway_months'] = (result['total_cash'] / result['quarterly_cash_burn']) * 3
+            # Prefer quarterly FCF as quarterly burn; fallback to annual FCF / 4.
+            quarterly_fcf = self._extract_statement_value(quarterly_cash_flow, ['Free Cash Flow'])
+            annual_fcf = self._extract_statement_value(annual_cash_flow, ['Free Cash Flow'])
+
+            if isinstance(quarterly_fcf, (int, float)) and quarterly_fcf < 0:
+                result['quarterly_cash_burn'] = abs(float(quarterly_fcf))
+            elif isinstance(annual_fcf, (int, float)) and annual_fcf < 0:
+                result['quarterly_cash_burn'] = abs(float(annual_fcf)) / 4
+
+            if result['total_cash'] > 0 and result['quarterly_cash_burn'] > 0:
+                result['runway_months'] = (result['total_cash'] / result['quarterly_cash_burn']) * 3
 
             if self.use_cache:
                 self.cache.set(cache_key, result)

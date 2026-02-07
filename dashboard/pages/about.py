@@ -209,10 +209,10 @@ def render_about():
         st.markdown("""
         **Cash Runway**
         ```
-        Runway (months) = Total Cash / (Quarterly Burn × 3)
+        Runway (months) = (Total Cash / Quarterly Burn) × 3
         ```
-        - Cash from most recent balance sheet
-        - Burn rate from trailing cash flow
+        - Cash from most recent quarterly balance sheet (annual fallback)
+        - Burn rate from free cash flow (quarterly preferred, annual fallback)
 
         **Dilution Scenarios**
         | Scenario | Dilution | Probability |

@@ -1,251 +1,398 @@
-/* Custom CSS for Junior Gold Intel Dashboard */
-/* Ported from existing Dakota Gold dashboard with multi-company enhancements */
+/* Junior Gold Intel: investor-grade visual system */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+:root {
+    --bg-canvas: #edf2f8;
+    --bg-panel: #f7f9fc;
+    --surface: #ffffff;
+    --surface-soft: #f3f6fb;
+    --line: #d5dfeb;
+    --line-strong: #b8c7db;
+    --ink: #10233c;
+    --ink-soft: #4f6482;
+    --brand: #1846a3;
+    --brand-2: #2f67d7;
+    --good: #119c5b;
+    --warn: #c48512;
+    --bad: #d64242;
+}
 
 * {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .stApp {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    color: #1a202c;
+    color: var(--ink);
+    background:
+        radial-gradient(1000px 420px at 78% -8%, rgba(47, 103, 215, 0.16), rgba(47, 103, 215, 0)),
+        radial-gradient(900px 360px at -10% 18%, rgba(24, 70, 163, 0.09), rgba(24, 70, 163, 0)),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg-canvas) 100%);
 }
 
-/* Sidebar styling */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-    border-right: 1px solid #e2e8f0;
+.main .block-container {
+    padding-top: 1.4rem;
 }
 
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3,
-section[data-testid="stSidebar"] label {
-    color: #2d3748 !important;
+h1, h2, h3 {
+    font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+    color: var(--brand) !important;
+    letter-spacing: -0.02em;
 }
 
-/* Main content headers */
 h1 {
-    color: #1e40af !important;
     font-weight: 700 !important;
-    font-size: 2.5rem !important;
-    margin-bottom: 0.5rem !important;
+    font-size: 2.2rem !important;
 }
 
-h2, h3 {
-    color: #1e3a8a !important;
-    font-weight: 600 !important;
-}
-
-/* Metric cards */
-div[data-testid="metric-container"] {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    transition: all 0.3s ease;
-}
-
-div[data-testid="metric-container"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    border-color: #60a5fa;
-}
-
-div[data-testid="metric-container"] label {
-    color: #64748b !important;
-    font-weight: 600 !important;
-    font-size: 0.875rem !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-div[data-testid="metric-container"] [data-testid="stMetricValue"] {
-    color: #0f172a !important;
-    font-weight: 700 !important;
+h2 {
     font-size: 2rem !important;
 }
 
-div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
-    font-weight: 600 !important;
+h3 {
+    font-size: 1.9rem !important;
 }
 
-/* Tab styling */
-.stTabs [data-baseweb="tab-list"] {
-    background-color: #ffffff;
-    border-radius: 8px;
-    padding: 4px;
-    gap: 4px;
+p, li, label {
+    color: var(--ink);
 }
 
-.stTabs [data-baseweb="tab"] {
-    color: #475569;
-    border-radius: 6px;
+/* Top app header */
+.app-banner {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(242, 247, 255, 0.96) 100%);
+    box-shadow: 0 12px 34px rgba(16, 35, 60, 0.08);
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.1rem 1.05rem 1.1rem;
+}
+
+.app-banner-label {
+    color: var(--ink-soft);
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-banner-title {
+    font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+    color: var(--brand);
+    font-weight: 700;
+    font-size: 1.6rem;
+    line-height: 1.1;
+    margin-top: 0.2rem;
+}
+
+.app-banner-meta {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    margin-top: 0.4rem;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #ffffff 0%, var(--bg-panel) 100%);
+    border-right: 1px solid var(--line);
+}
+
+section[data-testid="stSidebar"] .block-container {
+    padding-top: 1.2rem;
+}
+
+.sidebar-brand-card {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ffffff 0%, #eff5ff 100%);
+    box-shadow: 0 8px 22px rgba(21, 48, 90, 0.08);
+    padding: 0.85rem 0.85rem 0.9rem 0.85rem;
+}
+
+.sidebar-brand-title {
+    font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+    color: var(--brand);
+    font-size: 2.1rem;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+}
+
+.sidebar-brand-sub {
+    color: var(--ink-soft);
+    font-size: 1rem;
+    font-style: italic;
+    margin-top: 0.45rem;
+}
+
+.sidebar-section-title {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+}
+
+.gold-spot-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 0.7rem 0.75rem 0.75rem 0.75rem;
+}
+
+.gold-spot-label {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.gold-spot-ticker {
+    color: var(--ink-soft);
+    font-size: 0.93rem;
+    margin-top: 0.2rem;
+}
+
+.gold-spot-price {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 2.1rem;
+    font-weight: 600;
+    line-height: 1.1;
+    margin-top: 0.2rem;
+}
+
+.gold-spot-change {
+    border-radius: 999px;
+    display: inline-block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+    padding: 0.18rem 0.5rem;
+}
+
+.trend-up {
+    background: rgba(17, 156, 91, 0.14);
+    color: #0c7f49;
+}
+
+.trend-down {
+    background: rgba(214, 66, 66, 0.14);
+    color: #b72f2f;
+}
+
+.company-chip {
+    align-items: center;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    display: flex;
+    gap: 0.45rem;
+    margin-bottom: 0.45rem;
+    padding: 0.48rem 0.55rem;
+}
+
+.company-chip-ticker {
+    background: rgba(24, 70, 163, 0.1);
+    border-radius: 999px;
+    color: var(--brand);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.84rem;
+    font-weight: 600;
+    min-width: 3rem;
+    padding: 0.14rem 0.34rem;
+    text-align: center;
+}
+
+.company-chip-name {
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+/* Sidebar radio nav */
+div[data-testid="stSidebar"] [role="radiogroup"] > label {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    margin-bottom: 0.2rem;
+    padding: 0.2rem 0.25rem 0.2rem 0.15rem;
+    transition: all 160ms ease;
+}
+
+div[data-testid="stSidebar"] [role="radiogroup"] > label:hover {
+    background: rgba(24, 70, 163, 0.06);
+}
+
+div[data-testid="stSidebar"] [role="radiogroup"] > label:has(input:checked) {
+    background: linear-gradient(135deg, rgba(24, 70, 163, 0.11) 0%, rgba(47, 103, 215, 0.08) 100%);
+    border-color: rgba(24, 70, 163, 0.28);
+}
+
+div[data-testid="stSidebar"] [role="radiogroup"] > label span {
+    color: var(--ink);
+    font-size: 1.03rem;
+    font-weight: 500;
+}
+
+div[data-testid="stSidebar"] [role="radiogroup"] > label:has(input:checked) span {
+    color: var(--brand);
     font-weight: 600;
 }
 
-.stTabs [aria-selected="true"] {
-    background-color: #3b82f6 !important;
-    color: white !important;
-}
-
-/* Button styling */
+/* Buttons */
 .stButton button {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+    border: 0;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(24, 70, 163, 0.27);
+    color: #ffffff;
     font-weight: 600;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    transition: all 0.3s;
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+    transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .stButton button:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 12px 24px rgba(24, 70, 163, 0.33);
     transform: translateY(-1px);
-    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
 }
 
-/* Expander styling */
-.streamlit-expanderHeader {
-    background-color: #ffffff;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    color: #1e293b !important;
-    font-weight: 600;
-}
-
-/* Info boxes */
-.stAlert {
-    background-color: #eff6ff;
-    border-left: 4px solid #3b82f6;
-    color: #1e3a8a;
-}
-
-/* Markdown text */
-.stMarkdown {
-    color: #334155;
-}
-
-/* Success message */
-.stSuccess {
-    background-color: #d1fae5;
-    color: #065f46;
-}
-
-/* Custom NPV box */
-.npv-box {
-    background: linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%) !important;
-    padding: 40px !important;
-    border-radius: 20px !important;
-    border: 4px solid #3b82f6 !important;
-    box-shadow: 0 20px 60px rgba(59, 130, 246, 0.2) !important;
-    text-align: center !important;
-    margin: 30px 0 !important;
-}
-
-.npv-box h1, .npv-box h2, .npv-box p {
-    color: #0f172a !important;
-}
-
-/* Company cards */
-.company-card {
-    background: white;
+/* Metrics and containers */
+div[data-testid="metric-container"] {
+    background: linear-gradient(135deg, #ffffff 0%, #f5f9ff 100%);
+    border: 1px solid var(--line);
     border-radius: 12px;
-    padding: 20px;
-    margin: 10px 0;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 5px 16px rgba(21, 48, 90, 0.08);
+    min-height: 106px;
+    padding: 0.9rem 1rem 0.8rem 1rem;
 }
 
-.company-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    border-color: #3b82f6;
+div[data-testid="metric-container"] label {
+    color: var(--ink-soft) !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
 }
 
-/* Risk score colors */
-.risk-critical { color: #dc2626; }
-.risk-high { color: #f97316; }
-.risk-moderate { color: #eab308; }
-.risk-low { color: #22c55e; }
-.risk-minimal { color: #16a34a; }
+div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    color: var(--ink) !important;
+    font-family: "IBM Plex Mono", monospace !important;
+    font-size: 2rem !important;
+    font-weight: 600 !important;
+}
 
-/* Data table styling */
-.dataframe {
-    border-radius: 8px;
+div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+}
+
+div[data-testid="stMarkdownContainer"] hr {
+    border-color: var(--line);
+}
+
+div[data-testid="stSelectbox"] label {
+    color: var(--ink-soft) !important;
+    font-weight: 600 !important;
+}
+
+div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    border-color: var(--line-strong);
+    border-radius: 10px;
+}
+
+/* Dataframes and tables */
+[data-testid="stTable"] table, .stDataFrame table {
+    border-radius: 10px;
     overflow: hidden;
 }
 
-.dataframe th {
-    background-color: #1e3a8a !important;
-    color: white !important;
-    padding: 12px !important;
+.stDataFrame thead tr th {
+    background: #173c8b !important;
+    color: #ffffff !important;
 }
 
-.dataframe td {
-    padding: 10px !important;
+.stDataFrame tbody tr:nth-child(even) {
+    background: #f7fbff !important;
 }
 
-/* Comparison table */
-.comparison-table {
-    width: 100%;
-    border-collapse: collapse;
+/* Captions and helper text */
+.stCaption {
+    color: var(--ink-soft);
 }
 
-.comparison-table th {
-    background: #1e3a8a;
-    color: white;
-    padding: 12px;
-    text-align: left;
+/* Capital & Risk page helpers */
+.capital-hero {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 250, 255, 0.98) 100%);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 0.9rem;
+    padding: 0.85rem 1rem;
 }
 
-.comparison-table td {
-    padding: 12px;
-    border-bottom: 1px solid #e2e8f0;
+.capital-hero-kicker {
+    color: var(--ink-soft);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
-.comparison-table tr:hover {
-    background-color: #f8fafc;
+.capital-hero-title {
+    color: var(--brand);
+    font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+    font-size: 1.72rem;
+    font-weight: 700;
+    line-height: 1.14;
+    margin-top: 0.15rem;
 }
 
-/* Signal cards */
-.signal-card {
-    background: white;
-    border-radius: 8px;
-    padding: 16px;
-    margin: 8px 0;
-    border-left: 4px solid #3b82f6;
+.capital-hero-sub {
+    color: var(--ink-soft);
+    font-size: 0.93rem;
+    margin-top: 0.28rem;
 }
 
-.signal-card.positive {
-    border-left-color: #22c55e;
-    background: #f0fdf4;
-}
-
-.signal-card.negative {
-    border-left-color: #dc2626;
-    background: #fef2f2;
-}
-
-.signal-card.warning {
-    border-left-color: #f97316;
-    background: #fff7ed;
-}
-
-/* Gauge chart container */
-.gauge-container {
-    display: flex;
-    justify-content: center;
+.source-strip {
     align-items: center;
-    padding: 20px;
+    background: rgba(23, 60, 139, 0.07);
+    border: 1px solid rgba(23, 60, 139, 0.15);
+    border-radius: 10px;
+    color: #1c3c78;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.84rem;
+    gap: 0.45rem;
+    justify-content: space-between;
+    margin: 0.35rem 0 1rem 0;
+    padding: 0.45rem 0.62rem;
 }
 
-/* Heatmap styling */
-.heatmap-container {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+.funding-risk-chip {
+    border-radius: 999px;
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-top: 0.45rem;
+    padding: 0.18rem 0.55rem;
+    text-transform: uppercase;
+}
+
+.risk-critical-chip {
+    background: rgba(214, 66, 66, 0.13);
+    color: #ac2929;
+}
+
+.risk-high-chip {
+    background: rgba(196, 133, 18, 0.15);
+    color: #9c690f;
+}
+
+.risk-moderate-chip {
+    background: rgba(196, 133, 18, 0.11);
+    color: #97670f;
+}
+
+.risk-low-chip, .risk-minimal-chip {
+    background: rgba(17, 156, 91, 0.15);
+    color: #0f7d4b;
 }
