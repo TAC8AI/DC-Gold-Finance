@@ -152,6 +152,23 @@ def generate_signals(tickers: List[str]) -> List[Dict[str, Any]]:
 def render_signals_feed(tickers: List[str]):
     """Render the signals feed page"""
 
+    st.markdown(
+        """
+        <div class="signals-cta">
+            <div class="signals-cta-kicker">New: Live Agent Platform</div>
+            <div class="signals-cta-title">Portfolio Watchdog runs 24/7 with custom prompts and auto-alerts</div>
+            <div class="signals-cta-copy">
+                This dashboard is still available, but our production agent continuously monitors prices and signal quality,
+                runs every 30-60 minutes, and automatically texts stakeholders when high-score events trigger.
+            </div>
+            <a class="signals-cta-link" href="https://dcgold.org" target="_blank" rel="noopener noreferrer">
+                Open dcgold.org
+            </a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.markdown("## Signals Feed")
     st.markdown("Material changes and alerts requiring attention")
 

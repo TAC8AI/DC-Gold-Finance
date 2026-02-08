@@ -89,6 +89,58 @@ p, li, label {
     margin-top: 0.4rem;
 }
 
+/* Signals feed CTA */
+.signals-cta {
+    background: linear-gradient(120deg, rgba(20, 69, 160, 0.92) 0%, rgba(43, 97, 196, 0.94) 60%, rgba(14, 59, 146, 0.92) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(12, 34, 73, 0.26);
+    color: #ecf4ff;
+    margin: 0 0 1rem 0;
+    padding: 0.9rem 1rem 1rem 1rem;
+}
+
+.signals-cta-kicker {
+    color: rgba(236, 244, 255, 0.86);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.signals-cta-title {
+    color: #ffffff;
+    font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.24;
+    margin-top: 0.2rem;
+}
+
+.signals-cta-copy {
+    color: rgba(243, 248, 255, 0.95);
+    font-size: 0.9rem;
+    margin-top: 0.36rem;
+    max-width: 76ch;
+}
+
+.signals-cta-link {
+    background: #ffffff;
+    border-radius: 999px;
+    color: #133f95 !important;
+    display: inline-block;
+    font-size: 0.84rem;
+    font-weight: 700;
+    margin-top: 0.58rem;
+    padding: 0.3rem 0.68rem;
+    text-decoration: none;
+}
+
+.signals-cta-link:hover {
+    background: #edf4ff;
+    color: #0f3378 !important;
+}
+
 /* Sidebar */
 section[data-testid="stSidebar"] {
     background: linear-gradient(180deg, #ffffff 0%, var(--bg-panel) 100%);
