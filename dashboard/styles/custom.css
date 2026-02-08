@@ -508,3 +508,99 @@ div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
     font-size: 0.8rem;
     margin-top: 0.2rem;
 }
+
+/* ─── Mobile responsive overrides (≤768px) ─── */
+@media (max-width: 768px) {
+
+    /* Let Streamlit column rows wrap instead of cramming */
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+    }
+
+    /* Each column takes ~half the row so 6-col KPIs become 2×3 grid */
+    [data-testid="column"] {
+        min-width: calc(50% - 1rem) !important;
+        flex: 1 1 calc(50% - 1rem) !important;
+    }
+
+    /* Scale headings for mobile */
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.35rem !important; }
+    h3 { font-size: 1.2rem !important; }
+
+    /* Metric cards: smaller values so they don't truncate */
+    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+        font-size: 1.3rem !important;
+    }
+
+    div[data-testid="metric-container"] {
+        min-height: 80px;
+        padding: 0.6rem 0.7rem 0.5rem 0.7rem;
+    }
+
+    div[data-testid="metric-container"] label {
+        font-size: 0.7rem !important;
+    }
+
+    /* Source strip stacks vertically */
+    .source-strip {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+        font-size: 0.76rem;
+    }
+
+    /* App banner tighter */
+    .app-banner {
+        padding: 0.75rem 0.85rem;
+    }
+
+    .app-banner-title {
+        font-size: 1.2rem;
+    }
+
+    /* Sidebar scales */
+    .sidebar-brand-title {
+        font-size: 1.5rem;
+    }
+
+    .gold-spot-price {
+        font-size: 1.6rem;
+    }
+
+    /* Main container breathing room */
+    .main .block-container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        padding-top: 0.8rem;
+    }
+
+    /* Coverage cards auto-height on mobile */
+    .coverage-card {
+        min-height: auto;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Capital hero scales */
+    .capital-hero-title {
+        font-size: 1.3rem;
+    }
+}
+
+/* ─── Narrow phone overrides (≤480px) ─── */
+@media (max-width: 480px) {
+
+    /* Full width columns on very narrow screens */
+    [data-testid="column"] {
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+        font-size: 1.5rem !important;
+    }
+
+    h1 { font-size: 1.3rem !important; }
+    h2 { font-size: 1.2rem !important; }
+    h3 { font-size: 1.1rem !important; }
+}
