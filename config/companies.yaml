@@ -12,14 +12,15 @@ companies:
         name: "Richmond Hill"
         type: "heap_leach"
         annual_production_oz: 153000
-        annual_silver_production_oz:
-        life_of_mine_gold_oz:
-        life_of_mine_silver_oz:
-        mi_and_i_gold_moz:
-        mi_and_i_silver_moz:
+        annual_silver_production_oz: 800000
+        life_of_mine_gold_oz: 3650000
+        life_of_mine_silver_oz: 47800000
+        mi_and_i_gold_moz: 3.65
+        mi_and_i_silver_moz: 47.8
+        inferred_gold_moz: 2.61
         production_basis: "Model assumption for base-case valuation"
-        production_source: "Internal model configuration"
-        production_source_date: "2026-02-07"
+        production_source: "Dakota Gold Jan 2026 resource estimate and drill results"
+        production_source_date: "2026-02-05"
         aisc_per_oz: 1050
         mine_life_years: 17
         initial_capex_millions: 384
@@ -28,8 +29,37 @@ companies:
         jurisdiction: "USA - South Dakota"
         grade_g_per_t: 0.8
         recovery_rate: 0.75
+        pfs_target: "H2 2026"
+        drill_program_2026:
+          total_meters: 15481
+          total_holes: 109
+          rigs_operating: 2
+    # Capital events — known raises and strategic financing
+    known_raises:
+      - name: "Feb 2026 Public Offering"
+        date: "2026-02-11"
+        gross_proceeds_millions: 75.0
+        shares_issued: 12336000
+        price_per_share: 6.08
+        underwriters: ["BMO Capital Markets", "Scotiabank"]
+        overallotment_shares: 1850400
+        overallotment_max_millions: 86.25
+        use_of_proceeds: "Working capital and general corporate purposes including Richmond Hill PFS"
+        status: "closed"
+    strategic_financing:
+      orion:
+        name: "Orion Mine Finance"
+        total_invested_millions: 23.0
+        ownership_pct: 9.9
+        shares_held: 9011503  # 6,666,667 + 2,344,836
+        avg_cost_per_share: 2.55
+        royalty_nsr_pct: 1.0
+        construction_financing_commitment_millions: 300
+        construction_financing_binding: false  # Non-binding proposal
+        matching_rights: true
+        matching_rights_exclusion: "Equity/convertible offerings via banks/brokers up to $200M"
     control_factor: 0.25  # Adjustment for benchmark comparison
-    notes: "Former Barrick/Newmont management team. Near Homestake Mine (40M+ oz historic)"
+    notes: "Robert Quartermain (Canadian Mining Hall of Fame) team. Near Homestake Mine (40M+ oz historic). Orion Mine Finance strategic partner with $300M construction financing commitment."
 
   PPTA:
     name: "Perpetua Resources"

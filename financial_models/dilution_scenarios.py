@@ -1,5 +1,6 @@
 """
-Dilution scenario modeling: Low/Base/High with probabilities
+Dilution scenario modeling: Low/Base/High with probabilities.
+Supports company-specific known raises and strategic financing commitments.
 """
 import yaml
 import os
@@ -15,10 +16,21 @@ logger = setup_logger(__name__)
 CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config')
 
 
+def _load_companies_config() -> Dict:
+    """Load companies config for known raises and strategic financing."""
+    filepath = os.path.join(CONFIG_DIR, 'companies.yaml')
+    try:
+        with open(filepath, 'r') as f:
+            return yaml.safe_load(f) or {}
+    except Exception as e:
+        logger.warning(f"Could not load companies config: {e}")
+        return {}
+
+
 class DilutionScenarioModeler:
     """Models dilution scenarios for pre-production miners"""
 
-    # Default scenario definitions
+    # Default scenario definitions (for companies without known financing)
     DEFAULT_SCENARIOS = {
         'low': {
             'name': 'Low Dilution',
@@ -69,20 +81,113 @@ class DilutionScenarioModeler:
     def __init__(self):
         self.cap_analyzer = CapitalStructureAnalyzer()
         self.normalizer = DataNormalizer()
+        self.companies_config = _load_companies_config()
+
+    def _get_known_raises(self, ticker: str) -> List[Dict]:
+        """Get completed/closed known raises for a company from config."""
+        company = self.companies_config.get('companies', {}).get(ticker, {})
+        raises = company.get('known_raises', [])
+        return [r for r in raises if r.get('status') == 'closed']
+
+    def _get_strategic_financing(self, ticker: str) -> Dict:
+        """Get strategic financing details (e.g. Orion) from config."""
+        company = self.companies_config.get('companies', {}).get(ticker, {})
+        return company.get('strategic_financing', {})
+
+    def _sum_known_raises(self, ticker: str) -> Dict[str, float]:
+        """Sum up capital already raised and shares already issued from known raises."""
+        raises = self._get_known_raises(ticker)
+        total_proceeds = sum(r.get('gross_proceeds_millions', 0) for r in raises)
+        total_shares = sum(r.get('shares_issued', 0) for r in raises)
+        return {
+            'total_raised_millions': total_proceeds,
+            'total_shares_issued': total_shares,
+            'raises': raises
+        }
+
+    def _build_informed_scenarios(self, ticker: str, funding_gap_millions: float,
+                                  current_shares: int, current_price: float) -> Dict:
+        """Build dilution scenarios informed by known financing and strategic commitments."""
+        strategic = self._get_strategic_financing(ticker)
+        known = self._sum_known_raises(ticker)
+
+        # Calculate remaining funding gap after known raises
+        remaining_gap = max(0, funding_gap_millions - known['total_raised_millions'])
+
+        # Check for construction financing commitment (e.g. Orion)
+        construction_commitment = 0
+        has_debt_backstop = False
+        for partner_key, partner in strategic.items():
+            commitment = partner.get('construction_financing_commitment_millions', 0)
+            if commitment > 0:
+                construction_commitment += commitment
+                has_debt_backstop = True
+
+        # Build scenarios based on actual financing landscape
+        if has_debt_backstop and construction_commitment >= remaining_gap:
+            # Strong financing backstop exists (e.g. Orion $300M)
+            return {
+                'low': {
+                    'name': 'Debt-Funded Build',
+                    'dilution_percentage': 5,
+                    'probability': 0.25,
+                    'description': f'Construction financed primarily through committed debt facility (${construction_commitment:.0f}M available)',
+                    'conditions': [
+                        'Strong PFS economics',
+                        'Debt facility fully drawn',
+                        'Minimal additional equity needed'
+                    ]
+                },
+                'base': {
+                    'name': 'Mixed Debt + Equity',
+                    'dilution_percentage': 20,
+                    'probability': 0.45,
+                    'description': f'Debt covers ~60-70% of remaining ${remaining_gap:.0f}M gap, equity covers rest',
+                    'conditions': [
+                        'Typical project finance structure',
+                        'Partial debt draw + equity component',
+                        'Normal market conditions'
+                    ]
+                },
+                'high': {
+                    'name': 'Equity-Heavy Build',
+                    'dilution_percentage': 40,
+                    'probability': 0.25,
+                    'description': 'Debt facility terms unfavorable, more equity needed',
+                    'conditions': [
+                        'Higher interest rates',
+                        'PFS shows marginal economics',
+                        'Equity markets more accessible than debt'
+                    ]
+                },
+                'extreme': {
+                    'name': 'Full Equity + Overruns',
+                    'dilution_percentage': 70,
+                    'probability': 0.05,
+                    'description': 'Debt backstop not exercised, capex overruns, distressed equity',
+                    'conditions': [
+                        'Project setbacks or delays',
+                        'Gold price decline',
+                        'Orion declines to fund'
+                    ]
+                }
+            }
+        else:
+            # No strong backstop — use defaults but adjusted for known raises
+            return self.DEFAULT_SCENARIOS
 
     def model_scenarios(self, ticker: str, scenarios: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Model dilution scenarios for a company.
+        Accounts for known raises already completed and strategic financing commitments.
 
         Args:
             ticker: Company ticker symbol
-            scenarios: Optional custom scenarios (uses defaults if not provided)
+            scenarios: Optional custom scenarios (uses informed defaults if not provided)
 
         Returns:
             Dictionary with scenario analysis
         """
-        scenarios = scenarios or self.DEFAULT_SCENARIOS
-
         # Get company data
         company_data = self.normalizer.get_normalized_company_data(ticker)
         capital = self.cap_analyzer.analyze_structure(ticker)
@@ -93,7 +198,20 @@ class DilutionScenarioModeler:
         current_shares = capital['shares_outstanding']
         current_price = capital['current_price']
         market_cap = capital['market_cap']
-        funding_gap = company_data['calculated']['funding_gap_millions'] * 1_000_000
+        funding_gap_millions = company_data['calculated']['funding_gap_millions']
+        funding_gap = funding_gap_millions * 1_000_000
+
+        # Get known raises info
+        known = self._sum_known_raises(ticker)
+        strategic = self._get_strategic_financing(ticker)
+
+        # Build scenarios: use informed scenarios if we have financing data
+        if scenarios is None and (known['raises'] or strategic):
+            scenarios = self._build_informed_scenarios(
+                ticker, funding_gap_millions, current_shares, current_price
+            )
+        else:
+            scenarios = scenarios or self.DEFAULT_SCENARIOS
 
         # Model each scenario
         scenario_results = {}
@@ -153,6 +271,22 @@ class DilutionScenarioModeler:
             expected_shares += post_shares * probability
             expected_dilution += scenario_def['dilution_percentage'] * probability
 
+        # Calculate remaining gap after known raises
+        remaining_gap_millions = max(0, funding_gap_millions - known['total_raised_millions'])
+
+        # Build strategic financing summary
+        strategic_summary = {}
+        for partner_key, partner in strategic.items():
+            strategic_summary[partner_key] = {
+                'name': partner.get('name', partner_key),
+                'invested_millions': partner.get('total_invested_millions', 0),
+                'ownership_pct': partner.get('ownership_pct', 0),
+                'construction_commitment_millions': partner.get('construction_financing_commitment_millions', 0),
+                'binding': partner.get('construction_financing_binding', False),
+                'royalty_nsr_pct': partner.get('royalty_nsr_pct', 0),
+                'matching_rights': partner.get('matching_rights', False),
+            }
+
         # Calculate probability-weighted expected values
         result = {
             'ticker': ticker,
@@ -163,6 +297,15 @@ class DilutionScenarioModeler:
             'market_cap': market_cap,
             'market_cap_millions': market_cap / 1_000_000,
             'funding_gap_millions': funding_gap / 1_000_000,
+
+            # Known raises already completed
+            'known_raises': known['raises'],
+            'total_already_raised_millions': known['total_raised_millions'],
+            'total_shares_from_raises': known['total_shares_issued'],
+            'remaining_funding_gap_millions': remaining_gap_millions,
+
+            # Strategic financing
+            'strategic_financing': strategic_summary,
 
             'scenarios': scenario_results,
 
@@ -175,7 +318,9 @@ class DilutionScenarioModeler:
             'analysis_time': datetime.now().isoformat()
         }
 
-        logger.info(f"Dilution scenarios for {ticker}: Expected {expected_dilution:.1f}% dilution")
+        logger.info(f"Dilution scenarios for {ticker}: Expected {expected_dilution:.1f}% dilution "
+                     f"(already raised ${known['total_raised_millions']:.0f}M, "
+                     f"remaining gap ${remaining_gap_millions:.0f}M)")
         return result
 
     def calculate_npv_adjusted_for_dilution(

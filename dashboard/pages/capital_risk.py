@@ -245,6 +245,94 @@ def render_capital_risk(tickers: List[str], selected_ticker: str = None):
 
     st.markdown("---")
 
+    # --- Recent Capital Events ---
+    already_raised = dilution_data.get("total_already_raised_millions", 0)
+    remaining_gap = dilution_data.get("remaining_funding_gap_millions")
+    known_raises = dilution_data.get("known_raises", [])
+    strategic = dilution_data.get("strategic_financing", {})
+
+    if known_raises or strategic:
+        st.markdown("### Recent Capital Events & Strategic Financing")
+
+        if known_raises:
+            for raise_info in known_raises:
+                r_name = raise_info.get("name", "Raise")
+                r_date = raise_info.get("date", "N/A")
+                r_proceeds = raise_info.get("gross_proceeds_millions", 0)
+                r_shares = raise_info.get("shares_issued", 0)
+                r_price = raise_info.get("price_per_share", 0)
+                r_underwriters = raise_info.get("underwriters", [])
+                r_use = raise_info.get("use_of_proceeds", "General corporate purposes")
+
+                st.markdown(
+                    f"""
+                    <div style="background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+                                border-left: 4px solid #1f58c7; border-radius: 8px;
+                                padding: 16px 20px; margin-bottom: 12px;">
+                        <div style="font-weight: 700; font-size: 1.05rem; color: #0f172a;">
+                            {r_name}
+                        </div>
+                        <div style="color: #475569; font-size: 0.9rem; margin-top: 6px;">
+                            <strong>${r_proceeds:.0f}M</strong> gross proceeds
+                            &nbsp;·&nbsp; {r_shares:,} shares @ ${r_price:.2f}
+                            &nbsp;·&nbsp; Closed {r_date}
+                        </div>
+                        <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">
+                            Underwriters: {', '.join(r_underwriters) if r_underwriters else 'N/A'}
+                            &nbsp;·&nbsp; Use: {r_use}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+        if strategic:
+            for partner_key, partner in strategic.items():
+                p_name = partner.get("name", partner_key)
+                p_invested = partner.get("invested_millions", 0)
+                p_own = partner.get("ownership_pct", 0)
+                p_commit = partner.get("construction_commitment_millions", 0)
+                p_binding = "Binding" if partner.get("binding") else "Non-binding"
+                p_royalty = partner.get("royalty_nsr_pct", 0)
+                p_matching = partner.get("matching_rights", False)
+
+                st.markdown(
+                    f"""
+                    <div style="background: linear-gradient(135deg, #f5f0ff 0%, #ede8fd 100%);
+                                border-left: 4px solid #7c3aed; border-radius: 8px;
+                                padding: 16px 20px; margin-bottom: 12px;">
+                        <div style="font-weight: 700; font-size: 1.05rem; color: #0f172a;">
+                            Strategic Partner: {p_name}
+                        </div>
+                        <div style="color: #475569; font-size: 0.9rem; margin-top: 6px;">
+                            <strong>${p_invested:.0f}M</strong> invested ({p_own:.1f}% ownership)
+                            &nbsp;·&nbsp; {p_royalty:.1f}% NSR royalty
+                        </div>
+                        <div style="color: #475569; font-size: 0.9rem; margin-top: 4px;">
+                            Construction financing: <strong>${p_commit:.0f}M</strong> ({p_binding})
+                            {'&nbsp;·&nbsp; Has matching rights' if p_matching else ''}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+        ev1, ev2, ev3 = st.columns(3)
+        with ev1:
+            st.metric("Already Raised", f"${already_raised:.0f}M")
+        with ev2:
+            if remaining_gap is not None:
+                st.metric("Remaining Funding Gap", f"${remaining_gap:.0f}M",
+                          f"-${already_raised:.0f}M from raises")
+        with ev3:
+            total_commitment = sum(
+                p.get("construction_commitment_millions", 0) for p in strategic.values()
+            )
+            if total_commitment > 0:
+                st.metric("Debt Backstop Available", f"${total_commitment:.0f}M")
+
+        st.markdown("---")
+
     st.markdown("### Dilution Scenarios")
     if "error" not in dilution_data:
         scenarios = dilution_data.get("scenarios", {})
