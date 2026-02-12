@@ -65,7 +65,8 @@ def main():
     # Load configuration
     config = load_config()
     companies = config.get('companies', {})
-    tickers = list(companies.keys())
+    display_order = config.get('display_order', [])
+    tickers = [t for t in display_order if t in companies] if display_order else list(companies.keys())
 
     # Get gold price for header
     gold_fetcher = GoldPriceFetcher()

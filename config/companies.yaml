@@ -307,11 +307,14 @@ companies:
     notes: "Jason Simpson (ex-Torex Gold COO). 300,620 oz produced in 2025. 2026 guidance 340-360k oz. Acquired Musselwhite from Newmont for US$810M. Inaugural dividend US$0.06/yr. Target 500k+ oz/yr with South Railroad online."
 
 # Display order for dashboards
+# Grouped by stage: Permitting first, then Production
 display_order:
+  # --- Permitting ---
   - DC
   - PPTA
+  - SKE
+  # --- Production ---
+  - ORLA
+  - ARTG
   - HYMC
   - NEM
-  - SKE
-  - ARTG
-  - ORLA
