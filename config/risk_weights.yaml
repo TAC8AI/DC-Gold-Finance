@@ -153,3 +153,9 @@ company_overrides:
     control: 2  # Checkered history, celebrity investors
   NEM:
     control: 4  # World's largest producer, proven operators, strong institutional management
+  SKE:
+    control: 4  # Randy Reichert (ex-B2Gold VP Ops), fully financed via Orion US$750M package
+  ARTG:
+    control: 4  # Steven Dean (built & sold Atlantic Gold for C$802M), now producing
+  ORLA:
+    control: 4  # Jason Simpson (ex-Torex Gold COO), multi-asset producer, dividend-paying

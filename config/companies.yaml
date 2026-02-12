@@ -150,9 +150,168 @@ companies:
     control_factor: 0.15  # Major producer, lower benchmark penalty
     notes: "World's largest gold miner. Acquired Newcrest 2023. 134M oz reserves across 12+ operations."
 
+  SKE:
+    name: "Skeena Gold + Silver"
+    ticker: "SKE"
+    exchange: "NYSE"
+    description: "High-grade gold-silver developer redeveloping the legendary Eskay Creek mine in BC's Golden Triangle"
+    projects:
+      eskay_creek:
+        name: "Eskay Creek"
+        type: "open_pit"
+        annual_production_oz: 260000  # Years 1-10 avg; LOM avg ~233k; Yrs 1-5 peak ~455k AuEq
+        annual_silver_production_oz: 7650000  # Years 1-10 avg
+        life_of_mine_gold_oz: 2800000
+        life_of_mine_silver_oz: 81100000
+        mi_and_i_gold_moz: 4.14
+        mi_and_i_silver_moz: 102.5
+        inferred_gold_moz: 0.03
+        production_basis: "2023 DFS; Years 1-10 average gold production"
+        production_source: "Skeena Nov 2023 Definitive Feasibility Study"
+        production_source_date: "2023-11-15"
+        aisc_per_oz: 687  # US$/oz AuEq co-product basis
+        mine_life_years: 12
+        initial_capex_millions: 535  # C$713M converted at ~0.75 USD/CAD
+        production_start_year: 2027
+        stage: "permitting"  # EA Certificate received Jan 2026; early works underway
+        jurisdiction: "Canada - British Columbia"
+        grade_g_per_t: 2.6  # Reserve grade; 3.6 g/t AuEq
+        recovery_rate: 0.83  # Gold; silver recovery 91%
+        silver_grade_g_per_t: 68.7  # Reserve silver grade
+        processing: "Conventional milling and flotation producing concentrate"
+    strategic_financing:
+      orion:
+        name: "Orion Mine Finance"
+        equity_millions: 100
+        gold_stream_millions: 200
+        senior_loan_millions: 350
+        cost_overrun_facility_millions: 100
+        total_package_millions: 750
+      franco_nevada:
+        name: "Franco-Nevada"
+        nsr_pct: 1.0
+        nsr_cost_millions: 56  # C$56M
+        convertible_debentures_millions: 25  # C$25M
+    control_factor: 0.20  # Strong management, fully financed, permitted
+    notes: "Past-producing Eskay Creek (1994-2008, one of world's highest-grade mines). US$750M Orion financing package. Randy Reichert (ex-B2Gold VP Ops). Also holds nearby Snip gold project for future mill feed."
+
+  ARTG:
+    name: "Artemis Gold"
+    ticker: "ARTG.V"  # TSXV ticker for Yahoo Finance
+    exchange: "TSXV"
+    description: "Canadian gold producer operating the Blackwater Mine in BC with major expansion underway"
+    projects:
+      blackwater:
+        name: "Blackwater Mine"
+        type: "open_pit"
+        annual_production_oz: 438000  # 2024 Expansion Study first 10 yrs avg; Phase 2 peak ~530k
+        annual_silver_production_oz: 2376000  # 2024 Expansion Study LOM avg
+        life_of_mine_gold_oz: 7450000
+        life_of_mine_silver_oz: 62200000  # Reserve basis
+        mi_and_i_gold_moz: 11.7
+        mi_and_i_silver_moz: 122.4
+        inferred_gold_moz: 0.246
+        production_basis: "2024 Expansion Study first 10 years average; commercial production May 2025"
+        production_source: "Artemis Gold 2024 Expansion Study & Q4 2025 Production Results"
+        production_source_date: "2026-01-15"
+        aisc_per_oz: 781  # 2024 Expansion Study LOM; first 10 yrs US$712/oz
+        mine_life_years: 17  # 2024 Expansion Study (15 yrs open pit + 2 yrs stockpile)
+        initial_capex_millions: 484  # C$645M Phase 1 converted; EP2 expansion C$1.44B additional
+        production_start_year: 2025  # Commercial production declared May 1, 2025
+        stage: "production"  # Producing; EP2 expansion construction starting 2026
+        jurisdiction: "Canada - British Columbia"
+        grade_g_per_t: 0.75  # P&P reserve grade; mill feed Phase 1 is 1.51 g/t
+        recovery_rate: 0.93  # Gold design recovery; ~88% during 2025 ramp-up
+        processing: "Conventional milling with gravity concentration and CIL"
+        ep2_expansion:
+          capex_millions: 1080  # C$1.44B converted
+          target_throughput_mtpa: 21
+          target_annual_production_oz: 525000  # Phase 2 Yrs 3-6 ~530k
+          first_gold: "Q3 2028"
+    control_factor: 0.15  # Already producing, expanding, strong management
+    notes: "Steven Dean (founded Atlantic Gold, sold for C$802M). First gold Jan 2025, commercial production May 2025. 192,808 oz produced in 2025 ramp-up. Wheaton Precious Metals streaming agreement. EP2 expansion to 21 Mtpa underway."
+
+  ORLA:
+    name: "Orla Mining"
+    ticker: "ORLA"
+    exchange: "NYSE American"
+    description: "Intermediate gold producer with operating mines in Mexico and Canada plus Nevada development project"
+    projects:
+      camino_rojo:
+        name: "Camino Rojo"
+        type: "heap_leach"
+        annual_production_oz: 120000  # 2026 guidance 110-120k; 2024 actual 136,748 oz
+        annual_silver_production_oz: 597000  # FS estimate
+        life_of_mine_gold_oz: 980000  # LOM recovered gold (oxide)
+        life_of_mine_silver_oz: 6189000  # LOM recovered silver (oxide)
+        mi_and_i_gold_moz: 5.0  # Combined oxide + underground as of 2025
+        mi_and_i_silver_moz: 38.8  # Oxide M&I
+        inferred_gold_moz: 0.52  # Oxide 0.12 + underground 0.40
+        production_basis: "2026 guidance for oxide operations; underground resource represents future upside"
+        production_source: "Orla Mining 2025 Annual Production & 2026 Guidance"
+        production_source_date: "2026-01-16"
+        aisc_per_oz: 900  # 2025 guidance US$850-950; 2024 actual US$805
+        mine_life_years: 10  # Oxide FS; underground would extend significantly
+        initial_capex_millions: 134  # Already built and producing
+        production_start_year: 2022  # Commercial production April 2022
+        stage: "production"
+        jurisdiction: "Mexico - Zacatecas"
+        grade_g_per_t: 0.70  # Current P&P reserve grade
+        recovery_rate: 0.55  # Blended 40-70% range for heap leach oxide
+        underground_optionality:
+          mi_and_i_gold_moz: 3.95  # June 2025 initial underground resource
+          grade_g_per_t: 2.45
+          stage: "early study"
+      south_railroad:
+        name: "South Railroad"
+        type: "heap_leach"
+        annual_production_oz: 130000  # First 5 yrs avg; LOM avg 103,756
+        annual_silver_production_oz: 76000  # Derived from LOM
+        life_of_mine_gold_oz: 1072306  # LOM recovered
+        life_of_mine_silver_oz: 760005
+        mi_and_i_gold_moz: 2.46
+        mi_and_i_silver_moz: 7.4
+        inferred_gold_moz: 1.01
+        production_basis: "Jan 2026 Updated Feasibility Study; first 5 years average"
+        production_source: "Orla Mining Jan 2026 Updated FS for South Railroad"
+        production_source_date: "2026-01-21"
+        aisc_per_oz: 1505  # LOM avg; first 5 yrs US$1,485
+        mine_life_years: 10
+        initial_capex_millions: 395
+        production_start_year: 2028  # First gold pour early 2028
+        stage: "construction"  # Board approved construction spending Jan 2026
+        jurisdiction: "USA - Nevada"
+        grade_g_per_t: 0.71  # P&P reserve grade
+        recovery_rate: 0.70  # Blended Dark Star + Pinion
+      musselwhite:
+        name: "Musselwhite"
+        type: "underground"
+        annual_production_oz: 200000  # 2025 actual 203,856 oz (10 months)
+        annual_silver_production_oz:
+        life_of_mine_gold_oz:
+        life_of_mine_silver_oz:
+        mi_and_i_gold_moz:
+        mi_and_i_silver_moz:
+        production_basis: "2025 actual production (10 months post-acquisition); 25+ year operating history"
+        production_source: "Orla Mining 2025 Annual Production Results"
+        production_source_date: "2026-01-16"
+        aisc_per_oz: 1650  # Estimated from consolidated guidance
+        mine_life_years:
+        initial_capex_millions: 850  # US$810M acquisition + US$40M contingent
+        production_start_year: 2025  # Acquired from Newmont Feb 2025
+        stage: "production"
+        jurisdiction: "Canada - Ontario"
+        grade_g_per_t:
+        recovery_rate:
+    control_factor: 0.15  # Multi-asset producer, strong management, dividend-paying
+    notes: "Jason Simpson (ex-Torex Gold COO). 300,620 oz produced in 2025. 2026 guidance 340-360k oz. Acquired Musselwhite from Newmont for US$810M. Inaugural dividend US$0.06/yr. Target 500k+ oz/yr with South Railroad online."
+
 # Display order for dashboards
 display_order:
   - DC
   - PPTA
   - HYMC
   - NEM
+  - SKE
+  - ARTG
+  - ORLA
