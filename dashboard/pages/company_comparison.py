@@ -89,13 +89,17 @@ def render_company_comparison(tickers: List[str]):
 
     nav_controls_col1, nav_controls_col2, nav_controls_col3, nav_controls_col4 = st.columns(4)
     with nav_controls_col1:
+        nav_gold_key = "nav_gold_price_company_comparison"
+        nav_gold_default = int(max(1400, min(5000, round(gold_price))))
+        if nav_gold_key in st.session_state:
+            st.session_state[nav_gold_key] = int(max(1400, min(5000, st.session_state[nav_gold_key])))
         nav_gold_price = st.number_input(
             "NAV Gold Price ($/oz)",
             min_value=1400,
             max_value=5000,
             step=25,
-            value=int(round(gold_price)),
-            key="nav_gold_price_company_comparison",
+            value=nav_gold_default,
+            key=nav_gold_key,
         )
     with nav_controls_col2:
         nav_primary_discount = st.slider(
