@@ -82,3 +82,57 @@ currency:
 # Timing
 current_year: 2026
 analysis_horizon_years: 25
+
+# Corporate NAV comparison assumptions (peer apples-to-apples)
+nav_model:
+  default_discount_rate: 0.08
+  secondary_discount_rate: 0.05
+  use_stage_risking: true
+  risk_positive_npv_only: true
+  exclude_sunk_capex_for_producers: true
+  default_stage_probability: 0.50
+  stage_probabilities:
+    exploration: 0.25
+    pea: 0.35
+    pfs: 0.50
+    fs: 0.65
+    permitting: 0.60
+    construction: 0.80
+    production: 1.00
+  # Optional per-company NAV bridge inputs (all values in $M)
+  corporate_adjustments:
+    DC:
+      non_operating_assets_millions: 0
+      other_liabilities_millions: 0
+      environmental_liabilities_millions: 0
+      stream_royalty_burden_millions: 0
+    PPTA:
+      non_operating_assets_millions: 0
+      other_liabilities_millions: 0
+      environmental_liabilities_millions: 0
+      stream_royalty_burden_millions: 0
+    HYMC:
+      non_operating_assets_millions: 0
+      other_liabilities_millions: 0
+      environmental_liabilities_millions: 0
+      stream_royalty_burden_millions: 0
+    NEM:
+      non_operating_assets_millions: 0
+      other_liabilities_millions: 0
+      environmental_liabilities_millions: 0
+      stream_royalty_burden_millions: 0
+    SKE:
+      non_operating_assets_millions: 0
+      other_liabilities_millions: 0
+      environmental_liabilities_millions: 0
+      stream_royalty_burden_millions: 0
+    ARTG:
+      non_operating_assets_millions: 0
+      other_liabilities_millions: 0
+      environmental_liabilities_millions: 0
+      stream_royalty_burden_millions: 0
+    ORLA:
+      non_operating_assets_millions: 0
+      other_liabilities_millions: 0
+      environmental_liabilities_millions: 0
+      stream_royalty_burden_millions: 0
