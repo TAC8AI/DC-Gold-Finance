@@ -14,6 +14,7 @@ from dashboard.pages.company_comparison import render_company_comparison
 from dashboard.pages.npv_sensitivity import render_npv_sensitivity
 from dashboard.pages.capital_risk import render_capital_risk
 from dashboard.pages.signals_feed import render_signals_feed
+from dashboard.pages.lassonde_curve_analysis import render_lassonde_curve_analysis
 from dashboard.pages.about import render_about
 from data_ingestion.gold_price_fetcher import GoldPriceFetcher
 
@@ -111,6 +112,7 @@ def main():
                 "NPV & Sensitivity",
                 "Capital & Risk",
                 "Signals Feed",
+                "Lassonde Curve Analysis",
                 "About"
             ],
             index=2,
@@ -171,6 +173,8 @@ def main():
         render_capital_risk(tickers)
     elif page == "Signals Feed":
         render_signals_feed(tickers)
+    elif page == "Lassonde Curve Analysis":
+        render_lassonde_curve_analysis()
     elif page == "About":
         render_about()
 

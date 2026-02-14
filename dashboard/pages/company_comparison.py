@@ -127,6 +127,22 @@ def render_company_comparison(tickers: List[str]):
             help="Applies stage probabilities to project NAV for expected-value comparison.",
         )
 
+    st.markdown(
+        f"""
+        <div style="background:#eef5ff; border:1px solid #cfe0ff; border-radius:12px; padding:12px 14px; margin:6px 0 10px 0;">
+            <div style="font-weight:700; color:#1846a3; margin-bottom:6px;">How to read this (simple)</div>
+            <div style="font-size:0.92rem; color:#1f2e45; line-height:1.45;">
+                • <strong>P/NAV</strong> compares market value to modeled mine value.<br>
+                • <strong>Below 1.0x</strong> = cheaper (paying less than modeled value), <strong>above 1.0x</strong> = richer valuation.<br>
+                • <strong>Lower is usually better</strong> when assumptions are the same across companies.<br>
+                • <strong>Stage-Risk NAV ON</strong> is more conservative for earlier-stage projects.<br>
+                • Primary discount rate ({nav_primary_discount:.2f}%) is your main view; secondary ({nav_secondary_discount:.2f}%) is a cross-check.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     nav_analysis = nav_model.compare_companies(
         tickers=tickers,
         gold_price=float(nav_gold_price),
