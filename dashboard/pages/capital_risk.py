@@ -233,6 +233,19 @@ def render_capital_risk(tickers: List[str], selected_ticker: str = None):
             unsafe_allow_html=True
         )
 
+    # Note about recent raises not yet reflected in balance sheet
+    known_raises_preview = dilution_data.get("known_raises", [])
+    if known_raises_preview:
+        raise_names = ", ".join(
+            f"{r.get('name', 'Raise')} (${r.get('gross_proceeds_millions', 0):.0f}M)"
+            for r in known_raises_preview
+        )
+        st.info(
+            f"**Note:** Cash on Hand is sourced from the latest filed balance sheet and may not yet "
+            f"reflect recent capital events: {raise_names}. See Recent Capital Events below for details.",
+            icon="ℹ️"
+        )
+
     runway_col, funding_col = st.columns(2)
     with runway_col:
         st.plotly_chart(_runway_timeline_chart(runway), use_container_width=True)

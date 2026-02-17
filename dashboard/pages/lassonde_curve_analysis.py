@@ -15,6 +15,13 @@ BRAND_LIGHT = "#2f67d7"
 GOOD_GREEN = "#119c5b"
 WARN_ORANGE = "#c48512"
 BAD_RED = "#d64242"
+PLOTLY_VIDEO_CONFIG = {"displayModeBar": False, "responsive": True}
+
+PPTA_AMENDED_PFS_DATE = pd.Timestamp("2019-03-28")
+PPTA_FS_ISSUED_DATE = pd.Timestamp("2021-01-27")
+PPTA_FS_EFFECTIVE_DATE = pd.Timestamp("2020-12-22")
+PPTA_PERMIT_DATE = pd.Timestamp("2025-01-03")
+PPTA_CONSTRUCTION_DATE = pd.Timestamp("2025-10-21")
 
 
 def _interpolate_y(x_value: float, points: List[Dict[str, float]]) -> float:
@@ -47,12 +54,12 @@ def _build_lassonde_curve_chart() -> go.Figure:
     curve_y = [point["y"] for point in curve_points]
 
     stages = [
-        {"name": "Exploration", "start": 0, "end": 16, "desc": "Early drilling and mapping define geologic potential."},
-        {"name": "Discovery Peak", "start": 16, "end": 30, "desc": "Speculation spikes as headline intercepts attract momentum buyers."},
-        {"name": "Orphan Period", "start": 30, "end": 56, "desc": "Excitement fades while technical studies and de-risking grind forward."},
-        {"name": "Feasibility", "start": 56, "end": 72, "desc": "Economic studies tighten confidence around capex, opex, and mine plan."},
-        {"name": "Construction", "start": 72, "end": 86, "desc": "Permits and financing convert the project from idea to build."},
-        {"name": "Production Re-rate", "start": 86, "end": 100, "desc": "Commissioning and cash flow trigger valuation multiple expansion."},
+        {"name": "Exploration", "start": 0, "end": 16},
+        {"name": "Discovery Peak", "start": 16, "end": 30},
+        {"name": "Orphan Period", "start": 30, "end": 56},
+        {"name": "Feasibility", "start": 56, "end": 72},
+        {"name": "Construction", "start": 72, "end": 86},
+        {"name": "Production Re-rate", "start": 86, "end": 100},
     ]
 
     fig = go.Figure()
@@ -81,8 +88,8 @@ def _build_lassonde_curve_chart() -> go.Figure:
         )
         fig.add_annotation(
             x=(stage["start"] + stage["end"]) / 2,
-            y=1.30 if idx % 2 == 0 else 1.23,
-            text=f"<b>{stage['name']}</b><br><span style='font-size:11px'>{stage['desc']}</span>",
+            y=1.26,
+            text=f"<b>{stage['name']}</b>",
             showarrow=False,
             align="center",
             font=dict(color="#1f2e45"),
@@ -117,6 +124,7 @@ def _build_lassonde_curve_chart() -> go.Figure:
     ]
     for company in company_positions:
         y_value = _interpolate_y(company["x"], curve_points)
+        text_position = "bottom center" if company["ticker"] == "DC" else "top center"
         fig.add_trace(
             go.Scatter(
                 x=[company["x"]],
@@ -124,7 +132,7 @@ def _build_lassonde_curve_chart() -> go.Figure:
                 mode="markers+text",
                 marker=dict(size=14, color=company["color"], line=dict(color="#ffffff", width=2)),
                 text=[company["label"]],
-                textposition="top center",
+                textposition=text_position,
                 name=company["ticker"],
                 hovertemplate=f"{company['label']}<extra></extra>",
             )
@@ -132,7 +140,7 @@ def _build_lassonde_curve_chart() -> go.Figure:
 
     fig.update_layout(
         title="The Lassonde Curve",
-        height=520,
+        height=500,
         margin=dict(l=20, r=20, t=110, b=20),
         showlegend=False,
         plot_bgcolor="white",
@@ -147,7 +155,7 @@ def _build_lassonde_curve_chart() -> go.Figure:
         ),
         yaxis=dict(
             title="Relative Sentiment / Valuation",
-            range=[0, 1.36],
+            range=[0, 1.32],
             gridcolor="rgba(16, 35, 60, 0.08)",
             zeroline=False,
             showticklabels=False,
@@ -157,9 +165,9 @@ def _build_lassonde_curve_chart() -> go.Figure:
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def _fetch_ppta_two_year_data() -> pd.DataFrame:
-    """Fetch PPTA two-year daily close data from Yahoo Finance."""
-    history = yf.Ticker("PPTA").history(period="2y", auto_adjust=False)
+def _fetch_ppta_history(period: str = "10y") -> pd.DataFrame:
+    """Fetch PPTA daily close data from Yahoo Finance."""
+    history = yf.Ticker("PPTA").history(period=period, auto_adjust=False)
     if history.empty:
         return pd.DataFrame(columns=["Date", "Close"])
 
@@ -177,8 +185,8 @@ def _close_on_or_before(data: pd.DataFrame, event_date: datetime) -> float:
     return float(eligible["Close"].iloc[-1])
 
 
-def _build_ppta_case_study_chart(history: pd.DataFrame) -> go.Figure:
-    """Build PPTA stock chart with key lifecycle events."""
+def _build_ppta_historical_chart(history: pd.DataFrame) -> go.Figure:
+    """Build PPTA long-horizon chart (2018-present) with study/permit milestones."""
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
@@ -191,43 +199,54 @@ def _build_ppta_case_study_chart(history: pd.DataFrame) -> go.Figure:
         )
     )
 
-    feb_window = history[
-        (history["Date"] >= pd.Timestamp("2024-02-01")) &
-        (history["Date"] < pd.Timestamp("2024-03-01"))
-    ]
-    if not feb_window.empty:
-        feb_low_date = feb_window.loc[feb_window["Close"].idxmin(), "Date"]
-    else:
-        feb_low_date = pd.Timestamp("2024-02-15")
-
-    permit_date = pd.Timestamp("2025-01-03")
-    construction_date = pd.Timestamp("2025-10-21")
     current_date = history["Date"].iloc[-1]
 
     events = [
         {
-            "date": feb_low_date,
-            "price": 7.81,
-            "label": "Feb 2024: $7.81 low (orphan period)",
-            "color": BAD_RED,
-        },
-        {
-            "date": permit_date,
-            "price": _close_on_or_before(history, permit_date),
-            "label": "Jan 3, 2025: Permit issued<br><b>INFLECTION POINT</b>",
+            "date": PPTA_AMENDED_PFS_DATE,
+            "price": _close_on_or_before(history, PPTA_AMENDED_PFS_DATE),
+            "short_label": "Amended PFS",
             "color": BRAND_LIGHT,
+            "ax": 20,
+            "ay": -45,
+            "xshift": 0,
         },
         {
-            "date": construction_date,
-            "price": _close_on_or_before(history, construction_date),
-            "label": "Oct 21, 2025: Construction started",
+            "date": PPTA_FS_ISSUED_DATE,
+            "price": _close_on_or_before(history, PPTA_FS_ISSUED_DATE),
+            "short_label": "FS Issued",
+            "color": WARN_ORANGE,
+            "ax": -20,
+            "ay": 55,
+            "xshift": 0,
+        },
+        {
+            "date": PPTA_PERMIT_DATE,
+            "price": _close_on_or_before(history, PPTA_PERMIT_DATE),
+            "short_label": "Permit Issued",
             "color": GOOD_GREEN,
+            "ax": 20,
+            "ay": -55,
+            "xshift": 0,
+        },
+        {
+            "date": PPTA_CONSTRUCTION_DATE,
+            "price": _close_on_or_before(history, PPTA_CONSTRUCTION_DATE),
+            "short_label": "Construction Started",
+            "color": GOOD_GREEN,
+            "ax": 20,
+            "ay": -55,
+            "xshift": 0,
         },
         {
             "date": current_date,
             "price": float(history["Close"].iloc[-1]),
-            "label": "Current: ~$27",
+            "label": f"Current: ${float(history['Close'].iloc[-1]):.2f}",
+            "short_label": f"Current ${float(history['Close'].iloc[-1]):.2f}",
             "color": WARN_ORANGE,
+            "ax": -40,
+            "ay": -45,
+            "xshift": 0,
         },
     ]
 
@@ -236,10 +255,8 @@ def _build_ppta_case_study_chart(history: pd.DataFrame) -> go.Figure:
             go.Scatter(
                 x=[event["date"]],
                 y=[event["price"]],
-                mode="markers+text",
+                mode="markers",
                 marker=dict(size=11, color=event["color"], line=dict(color="#ffffff", width=1.5)),
-                text=[event["label"]],
-                textposition="top center",
                 showlegend=False,
                 hovertemplate=f"{event['date']:%Y-%m-%d}<br>${event['price']:.2f}<extra></extra>",
             )
@@ -250,27 +267,198 @@ def _build_ppta_case_study_chart(history: pd.DataFrame) -> go.Figure:
             line_color=event["color"],
             opacity=0.45,
         )
+        fig.add_annotation(
+            x=event["date"],
+            y=event["price"],
+            text=f"<b>{event['short_label']}</b>",
+            showarrow=True,
+            arrowhead=2,
+            arrowwidth=1.5,
+            ax=event["ax"],
+            ay=event["ay"],
+            xshift=event["xshift"],
+            bgcolor="rgba(255,255,255,0.95)",
+            bordercolor=event["color"],
+            borderwidth=1,
+            font=dict(color="#1f2e45", size=11),
+        )
+
+    y_min = float(history["Close"].min())
+    y_max = float(history["Close"].max())
 
     fig.update_layout(
-        title="PPTA Case Study: Orphan Period to Construction Re-rate",
+        title="PPTA Long-Horizon Milestones (2018-Present)",
         height=470,
-        margin=dict(l=20, r=20, t=60, b=20),
+        margin=dict(l=20, r=20, t=70, b=20),
         plot_bgcolor="white",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(title="Date", gridcolor="rgba(16, 35, 60, 0.08)"),
-        yaxis=dict(title="Share Price (USD)", gridcolor="rgba(16, 35, 60, 0.08)"),
+        yaxis=dict(
+            title="Share Price (USD)",
+            gridcolor="rgba(16, 35, 60, 0.08)",
+            range=[y_min * 0.85, y_max * 1.18],
+        ),
     )
     return fig
+
+
+def _build_ppta_historical_table(history: pd.DataFrame) -> pd.DataFrame:
+    """Historical milestone summary for PPTA."""
+    rows = [
+        ("Amended PFS", PPTA_AMENDED_PFS_DATE),
+        ("FS Issued", PPTA_FS_ISSUED_DATE),
+        ("Permit Issued", PPTA_PERMIT_DATE),
+        ("Construction Started", PPTA_CONSTRUCTION_DATE),
+    ]
+    data = []
+    for milestone, event_date in rows:
+        px = _close_on_or_before(history, event_date)
+        data.append(
+            {
+                "Milestone": milestone,
+                "Date": event_date.strftime("%Y-%m-%d"),
+                "Price Near Date (USD)": f"${px:.2f}",
+            }
+        )
+    return pd.DataFrame(data)
+
+
+def _build_ppta_recent_chart(full_history: pd.DataFrame, recent_history: pd.DataFrame) -> go.Figure:
+    """Build recent 1Y PPTA chart for near-term execution view."""
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=recent_history["Date"],
+            y=recent_history["Close"],
+            mode="lines",
+            name="PPTA Close",
+            line=dict(color=BRAND_BLUE, width=3),
+            hovertemplate="%{x|%Y-%m-%d}<br>$%{y:.2f}<extra></extra>",
+        )
+    )
+
+    recent_start = recent_history["Date"].iloc[0]
+    current_date = recent_history["Date"].iloc[-1]
+    start_price = float(recent_history["Close"].iloc[0])
+    current_price = float(recent_history["Close"].iloc[-1])
+
+    events = [
+        {
+            "date": recent_start,
+            "price": start_price,
+            "short_label": "1Y Start",
+            "color": BRAND_LIGHT,
+            "ax": 20,
+            "ay": -45,
+            "xshift": 0,
+        },
+        {
+            "date": PPTA_CONSTRUCTION_DATE,
+            "price": _close_on_or_before(full_history, PPTA_CONSTRUCTION_DATE),
+            "short_label": "Construction Started",
+            "color": GOOD_GREEN,
+            "ax": 20,
+            "ay": -55,
+            "xshift": 0,
+        },
+        {
+            "date": current_date,
+            "price": current_price,
+            "short_label": f"Current ${current_price:.2f}",
+            "color": WARN_ORANGE,
+            "ax": -40,
+            "ay": -45,
+            "xshift": 0,
+        },
+    ]
+
+    for event in events:
+        if not (recent_start <= event["date"] <= current_date):
+            continue
+        fig.add_trace(
+            go.Scatter(
+                x=[event["date"]],
+                y=[event["price"]],
+                mode="markers",
+                marker=dict(size=11, color=event["color"], line=dict(color="#ffffff", width=1.5)),
+                showlegend=False,
+                hovertemplate=f"{event['date']:%Y-%m-%d}<br>${event['price']:.2f}<extra></extra>",
+            )
+        )
+        fig.add_vline(
+            x=event["date"],
+            line_dash="dot",
+            line_color=event["color"],
+            opacity=0.45,
+        )
+        fig.add_annotation(
+            x=event["date"],
+            y=event["price"],
+            text=f"<b>{event['short_label']}</b>",
+            showarrow=True,
+            arrowhead=2,
+            arrowwidth=1.5,
+            ax=event["ax"],
+            ay=event["ay"],
+            xshift=event["xshift"],
+            bgcolor="rgba(255,255,255,0.95)",
+            bordercolor=event["color"],
+            borderwidth=1,
+            font=dict(color="#1f2e45", size=11),
+        )
+
+    y_min = float(recent_history["Close"].min())
+    y_max = float(recent_history["Close"].max())
+
+    fig.update_layout(
+        title="PPTA Recent Execution Window (1Y)",
+        height=470,
+        margin=dict(l=20, r=20, t=70, b=20),
+        plot_bgcolor="white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(title="Date", gridcolor="rgba(16, 35, 60, 0.08)"),
+        yaxis=dict(
+            title="Share Price (USD)",
+            gridcolor="rgba(16, 35, 60, 0.08)",
+            range=[y_min * 0.9, y_max * 1.15],
+        ),
+    )
+    return fig
+
+
+def _build_ppta_recent_table(full_history: pd.DataFrame, recent_history: pd.DataFrame) -> pd.DataFrame:
+    """Recent 1Y milestone summary for PPTA."""
+    rows = [
+        ("1Y Start", recent_history["Date"].iloc[0]),
+        ("Construction Started", PPTA_CONSTRUCTION_DATE),
+        ("Current", recent_history["Date"].iloc[-1]),
+    ]
+    data = []
+    for milestone, event_date in rows:
+        px = _close_on_or_before(full_history, event_date)
+        data.append(
+            {
+                "Milestone": milestone,
+                "Date": event_date.strftime("%Y-%m-%d"),
+                "Price Near Date (USD)": f"${px:.2f}",
+            }
+        )
+    return pd.DataFrame(data)
 
 
 def render_lassonde_curve_analysis():
     """Render Lassonde Curve Analysis page."""
     st.markdown("## Lassonde Curve Analysis")
     st.markdown("A stage-by-stage framework for why PPTA re-rated and how DC could follow a similar path.")
+    st.caption("Focus: compare DC milestone timing against the PPTA de-risking path.")
 
     st.markdown("---")
     st.markdown("### Section 1: The Lassonde Curve")
-    st.plotly_chart(_build_lassonde_curve_chart(), use_container_width=True)
+    st.plotly_chart(
+        _build_lassonde_curve_chart(),
+        use_container_width=True,
+        config=PLOTLY_VIDEO_CONFIG,
+    )
 
     stage_table = pd.DataFrame(
         [
@@ -283,16 +471,56 @@ def render_lassonde_curve_analysis():
         ]
     )
     st.dataframe(stage_table, use_container_width=True, hide_index=True)
+    st.caption("Framework source: Lassonde lifecycle concept adapted for junior gold developers.")
 
     st.markdown("---")
     st.markdown("### Section 2: PPTA Case Study")
-    ppta_history = _fetch_ppta_two_year_data()
+    ppta_history = _fetch_ppta_history(period="10y")
     if ppta_history.empty:
         st.warning("Unable to load PPTA price history from Yahoo Finance right now.")
     else:
-        st.plotly_chart(_build_ppta_case_study_chart(ppta_history), use_container_width=True)
+        latest_date = ppta_history["Date"].iloc[-1]
+        one_year_start = latest_date - pd.Timedelta(days=365)
+        recent_history = ppta_history[ppta_history["Date"] >= one_year_start].copy()
+        historical_history = ppta_history[ppta_history["Date"] >= pd.Timestamp("2018-01-01")].copy()
 
-    st.info("PPTA went 3.5x after getting permitted and starting construction.")
+        tab_hist, tab_recent = st.tabs(["Historical Context (2018-Present)", "Recent Execution (1Y)"])
+
+        with tab_hist:
+            st.plotly_chart(
+                _build_ppta_historical_chart(historical_history),
+                use_container_width=True,
+                config=PLOTLY_VIDEO_CONFIG,
+            )
+            st.dataframe(_build_ppta_historical_table(historical_history), use_container_width=True, hide_index=True)
+            st.caption(
+                "Context dates: Amended PFS (2019-03-28), FS issued (2021-01-27; effective 2020-12-22), "
+                "permit issued (2025-01-03), construction start (2025-10-21)."
+            )
+            st.caption(
+                f"Data as of {latest_date:%Y-%m-%d}. Source: Yahoo Finance via yfinance."
+            )
+
+        with tab_recent:
+            if recent_history.empty:
+                st.info("Recent 1Y window unavailable right now.")
+            else:
+                st.plotly_chart(
+                    _build_ppta_recent_chart(ppta_history, recent_history),
+                    use_container_width=True,
+                    config=PLOTLY_VIDEO_CONFIG,
+                )
+                st.dataframe(_build_ppta_recent_table(ppta_history, recent_history), use_container_width=True, hide_index=True)
+                st.caption(
+                    f"1Y window: {recent_history['Date'].iloc[0]:%Y-%m-%d} to {latest_date:%Y-%m-%d}."
+                )
+
+        st.info(
+            "A strict 5-year window from 2026 starts in 2021 and misses the 2019 Amended PFS, "
+            "so historical view is set to 2018-present."
+        )
+
+    st.info("PPTA shows a step-up in valuation as major de-risking milestones are cleared.")
 
     st.markdown("---")
     st.markdown("### Section 3: Dakota Gold vs PPTA")
@@ -349,4 +577,7 @@ def render_lassonde_curve_analysis():
         yaxis_title="Implied Share Price (USD)",
         yaxis=dict(gridcolor="rgba(16, 35, 60, 0.08)"),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_VIDEO_CONFIG)
+    st.caption(
+        "Modeled scenario outputs from internal assumptions; not a prediction or investment advice."
+    )
